@@ -18,18 +18,18 @@
   # közbeeső assistant tool_use-okat.
   summary=$(jq -rs '
     ([ to_entries[]
-       | select(
-           .value.type == "user"
-           and ((.value.isMeta // false) | not)
-           and ((.value.isSidechain // false) | not)
-           and (
-             (.value.message.content | type) == "string"
-             or ((.value.message.content | type) == "array"
-                 and ((.value.message.content | map(.type)) | any(. != "tool_result")))
-           )
-         )
-       | .key
-     ] | (.[-1] // -1)) as $start
+        | select(
+            .value.type == "user"
+            and ((.value.isMeta // false) | not)
+            and ((.value.isSidechain // false) | not)
+            and (
+              (.value.message.content | type) == "string"
+              or ((.value.message.content | type) == "array"
+                  and ((.value.message.content | map(.type)) | any(. != "tool_result")))
+            )
+          )
+        | .key
+      ] | (.[-1] // -1)) as $start
     | [ .[ ($start + 1) : ][]
         | select(.type == "assistant" and ((.isSidechain // false) | not))
         | .message.content[]?
@@ -57,4 +57,4 @@
     exit 0
   fi
 
-  jq -nc --arg msg "🧰 $summary" '{systemMessage: $msg}'%
+  jq -nc --arg msg "🧰 $summary" '{systemMessage: $msg}'
