@@ -1,0 +1,132 @@
+schemaVersion: "1"
+kind: mixin
+name: my-sandbox-kit
+
+environment:
+  variables:
+    ANTHROPIC_API_KEY: ""
+    ANTHROPIC_BASE_URL: "http://host.docker.internal:6655/anthropic/"
+    ANTHROPIC_MODEL: "anthropic--claude-opus-latest"
+    CLAUDE_CODE_ENABLE_TELEMETRY: "1"
+    OTEL_METRICS_EXPORTER: "otlp"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://host.docker.internal:4318"
+    SEARXNG_URL: "http://host.docker.internal:8888"
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "70"
+    # Both spellings: some tools (curl, requests) read lowercase, others (Go-based, Docker CLI) read uppercase
+    no_proxy: "localhost,127.0.0.1,::1,gateway.docker.internal"
+    NO_PROXY: "localhost,127.0.0.1,::1,gateway.docker.internal"
+
+commands:
+  install:
+    - command: "mkdir -p /home/agent/.claude/skills && git clone --depth 1 https://github.com/Valetudox/claude-searxng-plugin /tmp/searxng-plugin && cp -r /tmp/searxng-plugin/.claude/skills/searchx /home/agent/.claude/skills/searchx && cp /tmp/searxng-plugin/.claude/settings.json /home/agent/.claude/settings.json && rm -rf /tmp/searxng-plugin"
+      user: "1000"
+
+    - command: "git clone --depth 1 https://github.com/199-biotechnologies/claude-deep-research-skill /home/agent/.claude/skills/deep-research"
+      user: "1000"
+
+    - command: 'git clone --depth 1 https://github.com/0xNyk/council-of-high-intelligence /home/agent/.claude/skills/council && mkdir -p /home/agent/.claude/agents && cp -sf /home/agent/.claude/skills/council/agents/*.md /home/agent/.claude/agents/'
+      user: "1000"
+
+    - command: "git clone --depth 1 https://github.com/kfchou/wiki-skills /tmp/wiki-skills && cp -r /tmp/wiki-skills/skills/wiki-* /home/agent/.claude/skills/ && rm -rf /tmp/wiki-skills"
+      user: "1000"
+
+    - command: 'uv tool install "semble[mcp]"'
+      user: "1000"
+
+    - command: 'uv run --with model2vec python -c "from model2vec import StaticModel; StaticModel.from_pretrained(''minishlab/potion-code-16M'')"'
+      user: "1000"
+
+    - command: |
+        set -euo pipefail
+        mkdir -p "$HOME/.claude/agents"
+        cp "$HOME/.local/share/uv/tools/semble/lib/python"*/site-packages/semble/agents/claude.md \
+           "$HOME/.claude/agents/semble-search.md"
+      user: "1000"
+
+    - command: |
+        set -euo pipefail
+        for d in searchx deep-research council; do
+          test -d "/home/agent/.claude/skills/$d" || { echo "MISSING: $d"; exit 1; }
+        done
+        ls /home/agent/.claude/skills/wiki-* >/dev/null || { echo "MISSING: wiki-*"; exit 1; }
+        command -v semble >/dev/null || { echo "MISSING: semble"; exit 1; }
+        test -f /home/agent/.claude/agents/semble-search.md || { echo "MISSING: semble-search agent"; exit 1; }
+        echo "[OK] all skills, semble, and semble-search agent present"
+      user: "1000"
+      description: Verify install
+
+  startup:
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # Clones gaborbencsik/ai once; reused for two installs below:
+          #   1) Stop hook (post-response-summary.sh + settings.json patch)
+          #   2) Personal agents from agents/*.md → ~/.claude/agents
+          # The repo is removed at the end so each startup picks up fresh content.
+
+          git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills
+
+          # 1) Stop hook
+          mkdir -p /home/agent/.claude/hooks
+          cp /tmp/gb-skills/hooks/post-summary/post-response-summary.sh \
+             /home/agent/.claude/hooks/post-response-summary.sh
+          chmod +x /home/agent/.claude/hooks/post-response-summary.sh
+          jq --slurpfile h /tmp/gb-skills/hooks/post-summary/post-summary.json \
+             '.hooks = $h[0]' /home/agent/.claude/settings.json \
+             > /tmp/settings.json.new
+          mv /tmp/settings.json.new /home/agent/.claude/settings.json
+
+          # 2) Personal agents
+          mkdir -p /home/agent/.claude/agents
+          copied=0
+          if [ -d /tmp/gb-skills/agents ]; then
+              for f in /tmp/gb-skills/agents/*.md; do
+                  [ -e "$f" ] || continue
+                  cp -f "$f" /home/agent/.claude/agents/
+                  copied=$((copied + 1))
+              done
+          fi
+          echo "[agents] copied $copied agent(s) from gaborbencsik/ai/agents → ~/.claude/agents"
+
+          # 3) semble skill + command
+          mkdir -p /home/agent/.claude/skills/semble-search
+          cp /tmp/gb-skills/skills/semble-search/SKILL.md \
+             /home/agent/.claude/skills/semble-search/SKILL.md
+          mkdir -p /home/agent/.claude/commands
+          cp /tmp/gb-skills/commands/semble.md \
+             /home/agent/.claude/commands/semble.md
+
+          rm -rf /tmp/gb-skills
+      user: "1000"
+      description: Install personal Stop hook, agents, and semble skill+command from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          python3 - <<'PY'
+          import json, os, pathlib, stat
+          p = pathlib.Path.home() / ".claude.json"
+          cfg = {}
+          if p.exists():
+              try:
+                  cfg = json.loads(p.read_text())
+              except Exception:
+                  cfg = {}
+          servers = cfg.get("mcpServers") or {}
+          desired = {"type": "stdio", "command": "semble", "args": []}
+          if servers.get("semble") == desired:
+              print("[OK] semble MCP already registered, no change")
+          else:
+              servers["semble"] = desired
+              cfg["mcpServers"] = servers
+              if p.exists():
+                  os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
+              p.write_text(json.dumps(cfg, indent=2) + "\n")
+              print("[OK] semble MCP server registered in ~/.claude.json")
+          PY
+      user: "1000"
+      description: Register semble MCP server in ~/.claude.json (idempotent)
