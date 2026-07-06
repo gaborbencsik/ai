@@ -34,6 +34,48 @@ commands:
     - command: 'uv tool install "semble[mcp]"'
       user: "1000"
 
+    - command: |
+        set -euo pipefail
+        # qmd's native deps (tree-sitter-javascript, better-sqlite3) build via
+        # node-gyp — arm64 has no prebuild binary, so g++/make must be present.
+        # The base image ships neither.
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends build-essential python3
+      user: "1000"
+      description: Install C/C++ toolchain for npm native addons (qmd)
+
+    - command: |
+        set -euo pipefail
+        # qmd needs Node.js >= 22. Install via nvm if the system node is missing or too old.
+        need_install=1
+        if command -v node >/dev/null 2>&1; then
+            major=$(node -p 'process.versions.node.split(".")[0]')
+            [ "$major" -ge 22 ] && need_install=0 || true
+        fi
+        if [ "$need_install" = 1 ]; then
+            export NVM_DIR="$HOME/.nvm"
+            if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+                curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            fi
+            # shellcheck disable=SC1091
+            . "$NVM_DIR/nvm.sh"
+            nvm install 22
+            nvm alias default 22
+            # Persist for future bash invocations (nvm.sh is safe; completions are NOT sourced).
+            grep -q 'NVM_DIR="$HOME/.nvm"' /etc/sandbox-persistent.sh 2>/dev/null || \
+                echo 'export NVM_DIR="$HOME/.nvm"' | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+            grep -q 'nvm.sh' /etc/sandbox-persistent.sh 2>/dev/null || \
+                echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+        else
+            # nvm is already active; just source it if present.
+            [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+        fi
+        npm install -g @tobilu/qmd
+        command -v qmd >/dev/null || { echo "MISSING: qmd after npm install"; exit 1; }
+        echo "[OK] qmd installed: $(qmd --version 2>/dev/null || echo unknown)"
+      user: "1000"
+      description: Install qmd (Node >= 22 via nvm if needed) from npm
+
     - command: 'uv run --with model2vec python -c "from model2vec import StaticModel; StaticModel.from_pretrained(''minishlab/potion-code-16M'')"'
       user: "1000"
 
@@ -52,7 +94,10 @@ commands:
         ls /home/agent/.claude/skills/wiki-* >/dev/null || { echo "MISSING: wiki-*"; exit 1; }
         command -v semble >/dev/null || { echo "MISSING: semble"; exit 1; }
         test -f /home/agent/.claude/agents/semble-search.md || { echo "MISSING: semble-search agent"; exit 1; }
-        echo "[OK] all skills, semble, and semble-search agent present"
+        # qmd — source nvm so PATH is populated in this non-login shell
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+        command -v qmd >/dev/null || { echo "MISSING: qmd"; exit 1; }
+        echo "[OK] all skills, semble, semble-search agent, and qmd present"
       user: "1000"
       description: Verify install
 
@@ -99,9 +144,16 @@ commands:
           cp /tmp/gb-skills/commands/semble.md \
              /home/agent/.claude/commands/semble.md
 
+          # 4) qmd skill + command
+          mkdir -p /home/agent/.claude/skills/qmd
+          cp /tmp/gb-skills/skills/qmd/SKILL.md \
+             /home/agent/.claude/skills/qmd/SKILL.md
+          cp /tmp/gb-skills/commands/qmd.md \
+             /home/agent/.claude/commands/qmd.md
+
           rm -rf /tmp/gb-skills
       user: "1000"
-      description: Install personal Stop hook, agents, and semble skill+command from gaborbencsik/ai (idempotent)
+      description: Install personal Stop hook, agents, semble skill+command, and qmd skill+command from gaborbencsik/ai (idempotent)
 
     - command:
         - sh
@@ -117,16 +169,23 @@ commands:
               except Exception:
                   cfg = {}
           servers = cfg.get("mcpServers") or {}
-          desired = {"type": "stdio", "command": "semble", "args": []}
-          if servers.get("semble") == desired:
-              print("[OK] semble MCP already registered, no change")
+          desired_servers = {
+              "semble": {"type": "stdio", "command": "semble", "args": []},
+              "qmd":    {"type": "stdio", "command": "qmd",    "args": ["mcp"]},
+          }
+          changed = False
+          for name, spec in desired_servers.items():
+              if servers.get(name) != spec:
+                  servers[name] = spec
+                  changed = True
+          if not changed:
+              print("[OK] semble + qmd MCP servers already registered, no change")
           else:
-              servers["semble"] = desired
               cfg["mcpServers"] = servers
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] semble MCP server registered in ~/.claude.json")
+              print("[OK] semble + qmd MCP servers registered in ~/.claude.json")
           PY
       user: "1000"
-      description: Register semble MCP server in ~/.claude.json (idempotent)
+      description: Register semble + qmd MCP servers in ~/.claude.json (idempotent)
