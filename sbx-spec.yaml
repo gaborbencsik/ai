@@ -71,6 +71,13 @@ commands:
             [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
         fi
         npm install -g @tobilu/qmd
+        # Persist the npm-global bin dir so startup scripts (which run as
+        # a fresh `su ... bash -lc` with a bare /etc/environment PATH) can
+        # find qmd. Without this the qmd-index startup step logs
+        # "[qmd-index] qmd not found, skipping" even though qmd is installed.
+        NPM_BIN="$(npm config get prefix)/bin"
+        grep -q "$NPM_BIN" /etc/sandbox-persistent.sh 2>/dev/null || \
+            echo "export PATH=\"$NPM_BIN:\$PATH\"" | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
         command -v qmd >/dev/null || { echo "MISSING: qmd after npm install"; exit 1; }
         echo "[OK] qmd installed: $(qmd --version 2>/dev/null || echo unknown)"
       user: "1000"
@@ -105,16 +112,15 @@ commands:
     - command:
         - sh
         - -c
+        - "git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills"
+      user: "1000"
+      description: Clone gaborbencsik/ai to /tmp/gb-skills
+
+    - command:
+        - sh
+        - -c
         - |
           set -euo pipefail
-          # Clones gaborbencsik/ai once; reused for two installs below:
-          #   1) Stop hook (post-response-summary.sh + settings.json patch)
-          #   2) Personal agents from agents/*.md → ~/.claude/agents
-          # The repo is removed at the end so each startup picks up fresh content.
-
-          git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills
-
-          # 1) Stop hook
           mkdir -p /home/agent/.claude/hooks
           cp /tmp/gb-skills/hooks/post-summary/post-response-summary.sh \
              /home/agent/.claude/hooks/post-response-summary.sh
@@ -123,8 +129,14 @@ commands:
              '.hooks = $h[0]' /home/agent/.claude/settings.json \
              > /tmp/settings.json.new
           mv /tmp/settings.json.new /home/agent/.claude/settings.json
+      user: "1000"
+      description: Install Stop hook from gaborbencsik/ai (idempotent)
 
-          # 2) Personal agents
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
           mkdir -p /home/agent/.claude/agents
           copied=0
           if [ -d /tmp/gb-skills/agents ]; then
@@ -135,25 +147,35 @@ commands:
               done
           fi
           echo "[agents] copied $copied agent(s) from gaborbencsik/ai/agents → ~/.claude/agents"
+      user: "1000"
+      description: Copy personal agents from gaborbencsik/ai (idempotent)
 
-          # 3) semble skill + command
-          mkdir -p /home/agent/.claude/skills/semble-search
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/skills/semble-search /home/agent/.claude/commands
           cp /tmp/gb-skills/skills/semble-search/SKILL.md \
              /home/agent/.claude/skills/semble-search/SKILL.md
-          mkdir -p /home/agent/.claude/commands
           cp /tmp/gb-skills/commands/semble.md \
              /home/agent/.claude/commands/semble.md
+      user: "1000"
+      description: Install semble skill+command from gaborbencsik/ai (idempotent)
 
-          # 4) qmd skill + command
-          mkdir -p /home/agent/.claude/skills/qmd
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/skills/qmd /home/agent/.claude/commands
           cp /tmp/gb-skills/skills/qmd/SKILL.md \
              /home/agent/.claude/skills/qmd/SKILL.md
           cp /tmp/gb-skills/commands/qmd.md \
              /home/agent/.claude/commands/qmd.md
-
           rm -rf /tmp/gb-skills
       user: "1000"
-      description: Install personal Stop hook, agents, semble skill+command, and qmd skill+command from gaborbencsik/ai (idempotent)
+      description: Install qmd skill+command from gaborbencsik/ai and clean up (idempotent)
 
     - command:
         - sh
@@ -189,3 +211,90 @@ commands:
           PY
       user: "1000"
       description: Register semble + qmd MCP servers in ~/.claude.json (idempotent)
+
+    - command:
+        - bash
+        - -lc
+        - |
+          set -euo pipefail
+
+          # qmd is on PATH via /etc/sandbox-persistent.sh (append happens
+          # in the install step). -lc sources the persistent env.
+          command -v qmd >/dev/null || { echo "[qmd-index] qmd not found, skipping"; exit 0; }
+
+          # Pick project root: clone mode exposes the host repo read-only at
+          # /run/sandbox/source; direct mode mounts the working tree at
+          # $WORKSPACE_DIR (set on PID 1's env, survives `su + bash -lc`).
+          # Do NOT fall back to $PWD — the dispatcher's `su` lands in
+          # /home/agent/workspace, which is empty, and would create an
+          # empty collection.
+          if [ -d /run/sandbox/source ]; then
+            PROJECT_ROOT=/run/sandbox/source
+          elif [ -n "${WORKSPACE_DIR:-}" ] && [ -d "$WORKSPACE_DIR" ]; then
+            PROJECT_ROOT="$WORKSPACE_DIR"
+          else
+            echo "[qmd-index] WORKSPACE_DIR unset and no /run/sandbox/source; skipping"
+            exit 0
+          fi
+          echo "[qmd-index] project root: $PROJECT_ROOT"
+
+          # Persist qmd's data (SQLite index + ~319 MB embedding model)
+          # across `sbx rm` by symlinking ~/.cache/qmd to a directory
+          # inside the workspace, which is bind-mounted from the host.
+          # Without this, every recreate re-downloads the model (~6s) and
+          # re-embeds every doc (~28s). See .gitignore for the exclude.
+          PERSIST_CACHE="$PROJECT_ROOT/.qmd-cache"
+          mkdir -p "$PERSIST_CACHE"
+          CACHE_LINK="$HOME/.cache/qmd"
+          mkdir -p "$HOME/.cache"
+          if [ -L "$CACHE_LINK" ]; then
+            # Already a symlink — retarget if needed (ln -sfn is idempotent).
+            ln -sfn "$PERSIST_CACHE" "$CACHE_LINK"
+            echo "[qmd-index] cache already symlinked → $PERSIST_CACHE"
+          elif [ -d "$CACHE_LINK" ]; then
+            if [ -z "$(ls -A "$CACHE_LINK" 2>/dev/null)" ]; then
+              rmdir "$CACHE_LINK"
+              ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+              echo "[qmd-index] linked empty cache dir → $PERSIST_CACHE"
+            else
+              # Migrate existing cache to the persistent location.
+              # cp -an keeps host-side files if a collision exists.
+              echo "[qmd-index] migrating existing cache → $PERSIST_CACHE"
+              cp -an "$CACHE_LINK"/. "$PERSIST_CACHE"/ || true
+              rm -rf "$CACHE_LINK"
+              ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+            fi
+          else
+            ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+            echo "[qmd-index] linked fresh cache → $PERSIST_CACHE"
+          fi
+
+          export QMD_HOME="$HOME/.qmd"
+          mkdir -p "$QMD_HOME"
+
+          # Dedicated 'project' collection so results don't mix with
+          # wiki-*/notes. `qmd collection show` prints "Collection not
+          # found:" to stdout and still exits 0, so check the output.
+          if qmd collection show project 2>&1 | grep -q '^Collection: project'; then
+            echo "[qmd-index] 'project' collection exists, re-indexing"
+            qmd update -c project || echo "[qmd-index] update failed (non-fatal)"
+          else
+            echo "[qmd-index] creating 'project' collection at $PROJECT_ROOT"
+            qmd collection add "$PROJECT_ROOT" \
+                --name project \
+                --include '**/*.md' \
+                --exclude 'node_modules/**' \
+                --exclude '.git/**' \
+                --exclude 'dist/**' \
+                --exclude 'build/**' \
+                || echo "[qmd-index] collection add failed (non-fatal)"
+          fi
+
+          # Embedding is slow on first run (downloads a ~330MB model) — kick
+          # it off in the background so startup returns quickly. Until it
+          # finishes only lex (BM25) search works; vec/hyde come online once
+          # the log reports done.
+          nohup qmd embed >/tmp/qmd-embed.log 2>&1 &
+          echo "[qmd-index] embedding started in background (log: /tmp/qmd-embed.log)"
+      user: "1000"
+      description: Index the project's markdown into qmd on startup (incremental)
