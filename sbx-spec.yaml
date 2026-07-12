@@ -39,7 +39,20 @@ commands:
         # qmd's native deps (tree-sitter-javascript, better-sqlite3) build via
         # node-gyp — arm64 has no prebuild binary, so g++/make must be present.
         # The base image ships neither.
-        sudo apt-get update -qq
+        #
+        # `apt-get update` refreshes EVERY configured source, so a transient
+        # mirror-sync error on an unrelated repo (e.g. download.docker.com:
+        # "File has unexpected size … Mirror sync in progress?") makes the
+        # whole update exit 100 and aborts the build — even though the Ubuntu
+        # indices we actually need fetched fine ("old ones used instead").
+        # So: retry a few times for transient hiccups, and never let a failed
+        # `update` abort the build. The `install` below is the real gate — it
+        # fails loudly on its own if build-essential is genuinely unavailable.
+        for i in 1 2 3; do
+          sudo apt-get update -qq && break
+          echo "apt-get update attempt $i failed (transient?); retrying in 5s..."
+          sleep 5
+        done
         sudo apt-get install -y --no-install-recommends build-essential python3
       user: "1000"
       description: Install C/C++ toolchain for npm native addons (qmd)

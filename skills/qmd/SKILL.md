@@ -34,7 +34,7 @@ If `qmd status` reports 0 documents, no collection has been added yet — tell t
 
 Prefer the MCP tools exposed by the `qmd` server:
 
-- `mcp__qmd__query` — hybrid semantic + reranking, best quality. Default choice.
+- `mcp__qmd__query` — **default: keyword (lex).** Call with `searches: [{type: "lex", query: "…"}]` and `rerank: false` for the fast (~0.3s) path. Add `vec`/`hyde` lines or `rerank: true` only when a concept search is needed and the user has accepted the ~1min CPU wait.
 - `mcp__qmd__get` — retrieve a single document by path or `#docid`; supports `path:line:count` ranges.
 - `mcp__qmd__multi_get` — glob or list retrieval.
 - `mcp__qmd__status` — sanity check (collections, doc count).
@@ -50,12 +50,23 @@ qmd get "meetings/2024-01-15.md" --full
 
 ## Choosing a mode
 
-| Need | Tool |
-|---|---|
-| I know the exact keyword | `search` (BM25) |
-| I know the concept, not the words | `vsearch` (vector) |
-| I want the best result, cost be damned | `query` (hybrid + rerank) — **default** |
-| I have the path/docid, just fetch it | `get` / `multi_get` |
+**Default to keyword (lex).** On a CPU-only machine (no GPU), vector and rerank are slow — always prefer the fast path and escalate only when a keyword search genuinely fails.
+
+| Need | Tool | Speed (this machine) |
+|---|---|---|
+| Keyword / known term (**default**) | `search` (BM25), or `query` with `rerank: false` and only `lex` searches | ~0.3s |
+| Concept, not the words | `vsearch` / `query` with a `vec` line | ~46s (CPU) |
+| Best possible ranking | `query` (hybrid + rerank) | ~130s (CPU) |
+| I have the path/docid | `get` / `multi_get` | instant |
+
+## Performance & hardware
+
+Run `qmd doctor` to check the device. On a machine **without GPU** (`device probe: running on CPU`):
+
+- **Document embeddings are already built** — that one-time cost is paid. But every *query* using `vec`/`hyde` must embed the query text with a 1.7B model on CPU, so semantic search costs ~45s+ per call; reranked hybrid ~2min.
+- **Keyword (lex) needs no model — sub-second.** Make it the default.
+- **Never launch a slow (`vec` / `rerank: true`) search silently.** If keyword search is insufficient and semantic is warranted, **ask the user first** and warn about the ~1min wait, then run it.
+- GPU (Metal/CUDA/Vulkan) would make vector search sub-second; if available, install it and the default can shift back to hybrid.
 
 ## Output handling
 

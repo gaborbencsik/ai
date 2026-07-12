@@ -13,7 +13,7 @@ sbx-create:
 	sbx create --name $(SBX_NAME) --kit ~/kits/my-kit claude .
 
 sbx-run:
-	sbx run $(SBX_NAME)
+	sbx run --name $(SBX_NAME)
 
 sbx-rm:
 	sbx rm $(SBX_NAME)
