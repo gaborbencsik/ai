@@ -242,7 +242,11 @@ commands:
           desired_servers = {
               "semble":     {"type": "stdio", "command": "semble",                 "args": []},
               "qmd":        {"type": "stdio", "command": "qmd",                    "args": ["mcp"]},
-              "playwright": {"type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp", "--headless", "--isolated"]},
+              # --browser chromium is REQUIRED: @playwright/mcp defaults to
+              # channel:"chrome" (system Google Chrome at /opt/google/chrome/chrome),
+              # which does not exist here and has no arm64 build. This flag makes it
+              # launch the bundled Chromium we downloaded via `playwright install`.
+              "playwright": {"type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp", "--browser", "chromium", "--headless", "--isolated"]},
           }
           changed = False
           for name, spec in desired_servers.items():
