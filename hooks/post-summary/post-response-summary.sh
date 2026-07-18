@@ -61,8 +61,55 @@
     | join(", ")
   ' "$transcript")
 
-  if [[ -z "$summary" ]]; then
+  # Token-számláló ugyanazon a fordulón (az utolsó valódi user turntől).
+  # Az output_tokens fordulónként additív, ezért a forduló assistant
+  # lépéseire összegezzük. Az input viszont minden lépésnél a TELJES
+  # kontextust jelenti (input + cache_read + cache_creation), így nem
+  # összeadható — az utolsó assistant lépés input oldala adja a válasz
+  # tényleges kontextusméretét.
+  tokens=$(jq -rs '
+    ([ to_entries[]
+        | select(
+            .value.type == "user"
+            and ((.value.origin.kind // "") == "human")
+            and ((.value.isMeta // false) | not)
+            and ((.value.isSidechain // false) | not)
+            and (
+              (.value.message.content | type) == "string"
+              or ((.value.message.content | type) == "array"
+                  and ((.value.message.content | map(.type)) | any(. != "tool_result")))
+            )
+          )
+        | .key
+      ] | (.[-1] // -1)) as $start
+    | [ .[ ($start + 1) : ][]
+        | select(.type == "assistant" and ((.isSidechain // false) | not))
+        | .message.usage
+        | select(. != null)
+      ] as $usage
+    | if ($usage | length) == 0 then ""
+      else
+        ($usage | map(.output_tokens // 0) | add) as $out
+        | ($usage[-1]) as $last
+        | (($last.input_tokens // 0)
+           + ($last.cache_read_input_tokens // 0)
+           + ($last.cache_creation_input_tokens // 0)) as $in
+        | "↓\($in) in / ↑\($out) out"
+      end
+  ' "$transcript")
+
+  if [[ -z "$summary" && -z "$tokens" ]]; then
     exit 0
   fi
 
-  jq -nc --arg msg "🧰 $summary" '{systemMessage: $msg}'
+  # A tool-összesítő és a token-sor egyetlen üzenetbe kerül; bármelyik hiányozhat.
+  msg="🧰 ${summary}"
+  if [[ -n "$tokens" ]]; then
+    if [[ -n "$summary" ]]; then
+      msg="$msg · $tokens"
+    else
+      msg="🔢 $tokens"
+    fi
+  fi
+
+  jq -nc --arg msg "$msg" '{systemMessage: $msg}'
