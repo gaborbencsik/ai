@@ -96,6 +96,40 @@ commands:
       user: "1000"
       description: Install qmd (Node >= 22 via nvm if needed) from npm
 
+    - command: |
+        set -euo pipefail
+        # Playwright MCP lets Claude drive a real browser (navigate, click,
+        # snapshot, fill forms). Needs Node >= 22 — the qmd step above already
+        # installed it via nvm if the base image's node was too old, so source
+        # nvm here to get the right node/npm on PATH in this non-login shell.
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+
+        # Install the package into the npm global cache. We do NOT rely on the
+        # bin name it exposes — recent releases renamed it (playwright-mcp → mcp)
+        # and it has never been "mcp-server-playwright". The MCP server is
+        # launched via `npx @playwright/mcp` in the registration step below,
+        # which is the invocation Microsoft documents.
+        npm install -g @playwright/mcp
+
+        # Install the Chromium browser Playwright drives. install-deps pulls the
+        # system libraries (fonts, X/GTK libs) the browser needs and requires
+        # root, so run it under sudo; then download the browser as the agent
+        # user so the cache lands in $HOME.
+        sudo env "PATH=$PATH" npx --yes playwright install-deps chromium
+        npx --yes playwright install chromium
+
+        # Persist the npm-global bin dir (idempotent) so startup scripts running
+        # as a fresh `su ... bash -lc` can resolve npx and the package.
+        NPM_BIN="$(npm config get prefix)/bin"
+        grep -q "$NPM_BIN" /etc/sandbox-persistent.sh 2>/dev/null || \
+            echo "export PATH=\"$NPM_BIN:\$PATH\"" | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+
+        # Verify by asking the package itself for its version — bin-name agnostic.
+        npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp after npm install"; exit 1; }
+        echo "[OK] Playwright MCP installed: $(npx --yes @playwright/mcp --version 2>/dev/null || echo unknown)"
+      user: "1000"
+      description: Install Playwright MCP (browser automation) + Chromium
+
     - command: 'uv run --with model2vec python -c "from model2vec import StaticModel; StaticModel.from_pretrained(''minishlab/potion-code-16M'')"'
       user: "1000"
 
@@ -114,10 +148,11 @@ commands:
         ls /home/agent/.claude/skills/wiki-* >/dev/null || { echo "MISSING: wiki-*"; exit 1; }
         command -v semble >/dev/null || { echo "MISSING: semble"; exit 1; }
         test -f /home/agent/.claude/agents/semble-search.md || { echo "MISSING: semble-search agent"; exit 1; }
-        # qmd — source nvm so PATH is populated in this non-login shell
+        # qmd + playwright-mcp — source nvm so PATH is populated in this non-login shell
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
         command -v qmd >/dev/null || { echo "MISSING: qmd"; exit 1; }
-        echo "[OK] all skills, semble, semble-search agent, and qmd present"
+        npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp"; exit 1; }
+        echo "[OK] all skills, semble, semble-search agent, qmd, and playwright-mcp present"
       user: "1000"
       description: Verify install
 
@@ -205,8 +240,9 @@ commands:
                   cfg = {}
           servers = cfg.get("mcpServers") or {}
           desired_servers = {
-              "semble": {"type": "stdio", "command": "semble", "args": []},
-              "qmd":    {"type": "stdio", "command": "qmd",    "args": ["mcp"]},
+              "semble":     {"type": "stdio", "command": "semble",                 "args": []},
+              "qmd":        {"type": "stdio", "command": "qmd",                    "args": ["mcp"]},
+              "playwright": {"type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp", "--headless", "--isolated"]},
           }
           changed = False
           for name, spec in desired_servers.items():
@@ -214,16 +250,16 @@ commands:
                   servers[name] = spec
                   changed = True
           if not changed:
-              print("[OK] semble + qmd MCP servers already registered, no change")
+              print("[OK] semble + qmd + playwright MCP servers already registered, no change")
           else:
               cfg["mcpServers"] = servers
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] semble + qmd MCP servers registered in ~/.claude.json")
+              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json")
           PY
       user: "1000"
-      description: Register semble + qmd MCP servers in ~/.claude.json (idempotent)
+      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (idempotent)
 
     - command:
         - bash
