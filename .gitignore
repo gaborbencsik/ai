@@ -1,3 +1,7 @@
 # qmd's persistent SQLite index + ~319 MB embedding model.
 # Symlinked from ~/.cache/qmd inside the sandbox so it survives `sbx rm`.
 /.qmd-cache/
+
+# Built kit dir: sbx-spec.yaml with the real ANTHROPIC_API_KEY injected by
+# `make kit-build`. Contains a secret — never commit.
+/.kit/
