@@ -63,10 +63,10 @@
 
   # Token-számláló ugyanazon a fordulón (az utolsó valódi user turntől).
   # Az output_tokens fordulónként additív, ezért a forduló assistant
-  # lépéseire összegezzük. Az input viszont minden lépésnél a TELJES
-  # kontextust jelenti (input + cache_read + cache_creation), így nem
-  # összeadható — az utolsó assistant lépés input oldala adja a válasz
-  # tényleges kontextusméretét.
+  # lépéseire összegezzük. Az inputnál a FRISS (nem-cache) tokeneket
+  # mutatjuk: input_tokens + cache_creation — a cache_read (a korábbi
+  # kontextus újraolvasása) kimarad. Az utolsó assistant lépés input
+  # oldala adja a válasz tényleges friss kontextusméretét.
   tokens=$(jq -rs '
     ([ to_entries[]
         | select(
@@ -92,7 +92,6 @@
         ($usage | map(.output_tokens // 0) | add) as $out
         | ($usage[-1]) as $last
         | (($last.input_tokens // 0)
-           + ($last.cache_read_input_tokens // 0)
            + ($last.cache_creation_input_tokens // 0)) as $in
         | "↓\($in) in / ↑\($out) out"
       end
