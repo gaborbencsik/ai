@@ -111,12 +111,23 @@ commands:
         # which is the invocation Microsoft documents.
         npm install -g @playwright/mcp
 
-        # Install the Chromium browser Playwright drives. install-deps pulls the
-        # system libraries (fonts, X/GTK libs) the browser needs and requires
-        # root, so run it under sudo; then download the browser as the agent
-        # user so the cache lands in $HOME.
-        sudo env "PATH=$PATH" npx --yes playwright install-deps chromium
-        npx --yes playwright install chromium
+        # Install the Chromium browser the MCP will drive. CRITICAL: we must use
+        # the playwright CLI *bundled inside @playwright/mcp*, NOT a bare
+        # `npx playwright install`. The MCP pins a specific (often alpha)
+        # playwright version — e.g. mcp 0.0.78 → playwright 1.62-alpha, browser
+        # revision chromium-1232 — whereas bare `npx playwright` resolves to the
+        # latest stable (1.61.1 → a DIFFERENT revision). Installing with the
+        # wrong CLI downloads a browser revision the MCP does not look for at
+        # runtime, so the MCP reports "browser not installed" and it has to be
+        # re-installed inside the session. Resolving the browser download through
+        # the MCP's own node_modules keeps the revision in lockstep.
+        MCP_DIR="$(npm root -g)/@playwright/mcp"
+        PW_CLI="$MCP_DIR/node_modules/playwright/cli.js"
+        test -f "$PW_CLI" || { echo "MISSING: bundled playwright CLI at $PW_CLI"; exit 1; }
+        # install-deps needs root (system libs); the browser download runs as the
+        # agent user so the cache lands in $HOME/.cache/ms-playwright.
+        sudo env "PATH=$PATH" node "$PW_CLI" install-deps chromium
+        node "$PW_CLI" install chromium
 
         # Persist the npm-global bin dir (idempotent) so startup scripts running
         # as a fresh `su ... bash -lc` can resolve npx and the package.
@@ -124,7 +135,10 @@ commands:
         grep -q "$NPM_BIN" /etc/sandbox-persistent.sh 2>/dev/null || \
             echo "export PATH=\"$NPM_BIN:\$PATH\"" | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
 
-        # Verify by asking the package itself for its version — bin-name agnostic.
+        # Verify: the bundled playwright must report chromium as installed, and
+        # the package itself must answer --version (bin-name agnostic).
+        node "$PW_CLI" install --list 2>/dev/null | grep -q 'chromium-' \
+            || { echo "MISSING: chromium not installed for the MCP's playwright revision"; exit 1; }
         npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp after npm install"; exit 1; }
         echo "[OK] Playwright MCP installed: $(npx --yes @playwright/mcp --version 2>/dev/null || echo unknown)"
       user: "1000"
@@ -152,7 +166,11 @@ commands:
         [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
         command -v qmd >/dev/null || { echo "MISSING: qmd"; exit 1; }
         npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp"; exit 1; }
-        echo "[OK] all skills, semble, semble-search agent, qmd, and playwright-mcp present"
+        # The MCP's bundled playwright must have a matching chromium revision on
+        # disk, else the MCP falls back to "browser not installed" at runtime.
+        node "$(npm root -g)/@playwright/mcp/node_modules/playwright/cli.js" install --list 2>/dev/null \
+            | grep -q 'chromium-' || { echo "MISSING: chromium for playwright-mcp revision"; exit 1; }
+        echo "[OK] all skills, semble, semble-search agent, qmd, and playwright-mcp (with chromium) present"
       user: "1000"
       description: Verify install
 
