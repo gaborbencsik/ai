@@ -16,10 +16,18 @@
 
   # Az utolsó "valódi" user fordulótól (nem tool_result, nem meta) gyűjtjük a
   # közbeeső assistant tool_use-okat.
+  #
+  # Az `origin.kind == "human"` a kulcs: a háttér-események (Monitor/cron
+  # task-notification) is `type:"user"`, `content:string`, `isMeta:null`
+  # bejegyzésként kerülnek a transcriptbe (promptSource:"system",
+  # origin.kind:"task-notification"). Ezek nélkül a szűrő nélkül eltolnák a
+  # kezdő-indexet a válasz elé, így a summary üresen maradna, valahányszor egy
+  # háttér-értesítés érkezik közvetlenül a válasz elé.
   summary=$(jq -rs '
     ([ to_entries[]
         | select(
             .value.type == "user"
+            and ((.value.origin.kind // "") == "human")
             and ((.value.isMeta // false) | not)
             and ((.value.isSidechain // false) | not)
             and (
