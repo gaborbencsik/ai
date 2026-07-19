@@ -239,9 +239,22 @@ commands:
              /home/agent/.claude/skills/qmd/SKILL.md
           cp /tmp/gb-skills/commands/qmd.md \
              /home/agent/.claude/commands/qmd.md
+      user: "1000"
+      description: Install qmd skill+command from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/skills/md-to-slides /home/agent/.claude/commands
+          cp /tmp/gb-skills/skills/md-to-slides/SKILL.md \
+             /home/agent/.claude/skills/md-to-slides/SKILL.md
+          cp /tmp/gb-skills/commands/slides.md \
+             /home/agent/.claude/commands/slides.md
           rm -rf /tmp/gb-skills
       user: "1000"
-      description: Install qmd skill+command from gaborbencsik/ai and clean up (idempotent)
+      description: Install md-to-slides skill+command from gaborbencsik/ai and clean up (idempotent)
 
     - command:
         - sh
