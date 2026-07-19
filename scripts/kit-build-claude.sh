@@ -10,6 +10,9 @@
 #   SPEC      spec filename in the repo                   (default: sbx-spec.yaml)
 #   KIT_DIR   local output dir for the built spec         (default: .kit)
 #
+# The built spec is always written as KIT_DIR/spec.yaml because `sbx --kit`
+# requires that exact filename (spec.yaml or spec.yml) inside the kit dir.
+#
 # The key is read silently from the terminal (never echoed, never passed on the
 # command line so it can't leak into shell history or the process list).
 
@@ -18,7 +21,9 @@ set -euo pipefail
 REPO="${REPO:-gaborbencsik/ai}"
 SPEC="${SPEC:-sbx-spec.yaml}"
 KIT_DIR="${KIT_DIR:-.kit}"
-KIT_SPEC="$KIT_DIR/$SPEC"
+# `sbx --kit` looks for spec.yaml / spec.yml in the kit dir, regardless of what
+# the source file is named in the repo, so normalize the output filename here.
+KIT_SPEC="$KIT_DIR/spec.yaml"
 
 mkdir -p "$KIT_DIR"
 
