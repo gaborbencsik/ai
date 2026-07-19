@@ -241,13 +241,15 @@ commands:
           # context: all three plugins register (auto-discovered from skills-dir)
           # but load DISABLED, keeping their agent descriptions out of the system
           # prompt until switched on via /plugin. Keys not listed here keep Claude
-          # Code's default (enabled).
+          # Code's default. NOTE: the authoritative store is ~/.claude/settings.json
+          # (the top-level ~/.claude.json is app-state and is NOT read for this) —
+          # so we merge into settings.json, preserving hooks and other keys.
           desired = {
               "council@skills-dir": False,
               "developer@skills-dir": False,
               "product-marketing@skills-dir": False,
           }
-          p = pathlib.Path.home() / ".claude.json"
+          p = pathlib.Path.home() / ".claude" / "settings.json"
           cfg = {}
           if p.exists():
               try:
@@ -266,13 +268,14 @@ commands:
               print("[OK] enabledPlugins already seeded, no change")
           else:
               cfg["enabledPlugins"] = enabled
+              p.parent.mkdir(parents=True, exist_ok=True)
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] seeded enabledPlugins: council + developer + product-marketing all off")
+              print("[OK] seeded enabledPlugins in settings.json: council + developer + product-marketing all off")
           PY
       user: "1000"
-      description: Seed enabledPlugins in ~/.claude.json (council + developer + product-marketing all off; idempotent)
+      description: Seed enabledPlugins in ~/.claude/settings.json (council + developer + product-marketing all off; idempotent)
 
     - command:
         - sh
