@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the local kit dir: download sbx-spec.yaml from the repo and inject the
-# ANTHROPIC_API_KEY. The result lands in a gitignored dir and holds a secret —
+# ANTHROPIC_API_KEY. The result lands in a gitignored dir and holds a secret --
 # never commit it.
 #
 # Usage: scripts/kit-build-claude.sh
@@ -22,7 +22,7 @@ KIT_SPEC="$KIT_DIR/$SPEC"
 
 mkdir -p "$KIT_DIR"
 
-echo "Downloading: $SPEC ← $REPO…"
+echo "Downloading: $SPEC from $REPO ..."
 # `gh` runs on the host where it is authenticated; the raw Accept header returns
 # the file contents rather than the JSON metadata wrapper.
 gh api "repos/$REPO/contents/$SPEC" \
@@ -44,4 +44,4 @@ awk -v key="$API_KEY" \
 	'/^[[:space:]]*ANTHROPIC_API_KEY:/ { match($0, /^[[:space:]]*/); print substr($0, 1, RLENGTH) "ANTHROPIC_API_KEY: \"" key "\""; next } { print }' \
 	"$KIT_SPEC" > "$KIT_SPEC.tmp" && mv "$KIT_SPEC.tmp" "$KIT_SPEC"
 
-echo "Done: key injected → $KIT_SPEC"
+echo "Done: key injected -> $KIT_SPEC"
