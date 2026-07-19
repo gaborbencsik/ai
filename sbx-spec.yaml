@@ -238,12 +238,12 @@ commands:
           python3 - <<'PY'
           import json, os, pathlib, stat
           # Seed enabledPlugins so a fresh sandbox starts with a LEAN always-on
-          # context: only council is on by default; developer + product-marketing
-          # register (auto-discovered from skills-dir) but load DISABLED, keeping
-          # their agent descriptions out of the system prompt until switched on
-          # via /plugin. Keys not listed here keep Claude Code's default (enabled).
+          # context: all three plugins register (auto-discovered from skills-dir)
+          # but load DISABLED, keeping their agent descriptions out of the system
+          # prompt until switched on via /plugin. Keys not listed here keep Claude
+          # Code's default (enabled).
           desired = {
-              "council@skills-dir": True,
+              "council@skills-dir": False,
               "developer@skills-dir": False,
               "product-marketing@skills-dir": False,
           }
@@ -269,10 +269,10 @@ commands:
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] seeded enabledPlugins: council on, developer + product-marketing off")
+              print("[OK] seeded enabledPlugins: council + developer + product-marketing all off")
           PY
       user: "1000"
-      description: Seed enabledPlugins in ~/.claude.json (council on, developer + product-marketing off; idempotent)
+      description: Seed enabledPlugins in ~/.claude.json (council + developer + product-marketing all off; idempotent)
 
     - command:
         - sh
