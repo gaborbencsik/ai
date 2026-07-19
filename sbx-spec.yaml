@@ -235,6 +235,49 @@ commands:
         - sh
         - -c
         - |
+          python3 - <<'PY'
+          import json, os, pathlib, stat
+          # Seed enabledPlugins so a fresh sandbox starts with a LEAN always-on
+          # context: only council is on by default; developer + product-marketing
+          # register (auto-discovered from skills-dir) but load DISABLED, keeping
+          # their agent descriptions out of the system prompt until switched on
+          # via /plugin. Keys not listed here keep Claude Code's default (enabled).
+          desired = {
+              "council@skills-dir": True,
+              "developer@skills-dir": False,
+              "product-marketing@skills-dir": False,
+          }
+          p = pathlib.Path.home() / ".claude.json"
+          cfg = {}
+          if p.exists():
+              try:
+                  cfg = json.loads(p.read_text())
+              except Exception:
+                  cfg = {}
+          enabled = cfg.get("enabledPlugins")
+          if not isinstance(enabled, dict):
+              enabled = {}
+          changed = False
+          for name, state in desired.items():
+              if enabled.get(name) != state:
+                  enabled[name] = state
+                  changed = True
+          if not changed:
+              print("[OK] enabledPlugins already seeded, no change")
+          else:
+              cfg["enabledPlugins"] = enabled
+              if p.exists():
+                  os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
+              p.write_text(json.dumps(cfg, indent=2) + "\n")
+              print("[OK] seeded enabledPlugins: council on, developer + product-marketing off")
+          PY
+      user: "1000"
+      description: Seed enabledPlugins in ~/.claude.json (council on, developer + product-marketing off; idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
           set -euo pipefail
           mkdir -p /home/agent/.claude/skills/semble-search /home/agent/.claude/commands
           cp /tmp/gb-skills/skills/semble-search/SKILL.md \
