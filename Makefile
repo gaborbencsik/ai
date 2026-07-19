@@ -4,7 +4,7 @@ SBX_NAME := ai-skills
 REPO     := gaborbencsik/ai
 SPEC     := sbx-spec.yaml
 # Local, gitignored kit dir the create command points at. Holds the built
-# spec WITH the API key injected — never commit it.
+# spec WITH the API key injected -- never commit it.
 KIT_DIR  := .kit
 # Build script that downloads the spec + injects the API key. Auto-fetched
 # from the repo if missing (see sbx-create).
@@ -19,16 +19,14 @@ help:
 	@echo "    make sbx-run      Start the sbx environment"
 	@echo "    make sbx-rm       Remove the sbx environment"
 
-# Download the spec from the repo and inject the API key (scripts/kit-build-claude.sh),
-# then create the sandbox from the built kit dir. If the build script is missing
-# (fresh checkout without it), fetch it from the repo first and make it executable.
+# Always download the latest build script from the repo so every run uses a
+# fresh copy, then run it (downloads the spec + injects the API key) and create
+# the sandbox from the built kit dir.
 sbx-create:
-	@if [ ! -f $(SCRIPT) ]; then \
-		echo "$(SCRIPT) missing — downloading from $(REPO)…"; \
-		mkdir -p $(dir $(SCRIPT)); \
-		gh api "repos/$(REPO)/contents/$(SCRIPT)" -H "Accept: application/vnd.github.raw" > $(SCRIPT); \
-		chmod +x $(SCRIPT); \
-	fi
+	@echo "Downloading latest $(SCRIPT) from $(REPO)..."
+	@mkdir -p $(dir $(SCRIPT))
+	@gh api "repos/$(REPO)/contents/$(SCRIPT)" -H "Accept: application/vnd.github.raw" > $(SCRIPT)
+	@chmod +x $(SCRIPT)
 	@REPO=$(REPO) SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) ./$(SCRIPT)
 	sbx create --name $(SBX_NAME) --kit $(KIT_DIR) claude .
 
