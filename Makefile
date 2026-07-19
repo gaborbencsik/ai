@@ -10,14 +10,15 @@ KIT_DIR  := .kit
 # from the repo if missing (see sbx-create).
 SCRIPT   := scripts/kit-build-claude.sh
 
-.PHONY: help sbx-create sbx-run sbx-rm
+.PHONY: help sbx-create sbx-create-local sbx-run sbx-rm
 
 help:
 	@echo "Available commands:"
 	@echo ""
-	@echo "    make sbx-create   Download spec + inject API key, then create the sbx environment"
-	@echo "    make sbx-run      Start the sbx environment"
-	@echo "    make sbx-rm       Remove the sbx environment"
+	@echo "    make sbx-create         Download spec + script from the repo, inject API key, create the sbx environment"
+	@echo "    make sbx-create-local   Same, but use the local working-tree script + spec (no download; for testing)"
+	@echo "    make sbx-run            Start the sbx environment"
+	@echo "    make sbx-rm             Remove the sbx environment"
 
 # Always download the latest build script from the repo so every run uses a
 # fresh copy, then run it (downloads the spec + injects the API key) and create
@@ -28,6 +29,14 @@ sbx-create:
 	@gh api "repos/$(REPO)/contents/$(SCRIPT)" -H "Accept: application/vnd.github.raw" > $(SCRIPT)
 	@chmod +x $(SCRIPT)
 	@REPO=$(REPO) SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) ./$(SCRIPT)
+	sbx create --name $(SBX_NAME) --kit $(KIT_DIR) claude .
+
+# Build from the local working tree (no download): uses this repo's own
+# scripts/kit-build-claude.sh and sbx-spec.yaml so you can test uncommitted
+# changes before pushing. LOCAL_SPEC tells the script to copy the local spec
+# instead of fetching it.
+sbx-create-local:
+	@LOCAL_SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) ./$(SCRIPT)
 	sbx create --name $(SBX_NAME) --kit $(KIT_DIR) claude .
 
 sbx-run:

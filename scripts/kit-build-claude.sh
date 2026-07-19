@@ -6,9 +6,11 @@
 # Usage: scripts/kit-build-claude.sh
 #
 # Env overrides (all optional; sensible defaults below):
-#   REPO      GitHub owner/repo to fetch the spec from   (default: gaborbencsik/ai)
-#   SPEC      spec filename in the repo                   (default: sbx-spec.yaml)
-#   KIT_DIR   local output dir for the built spec         (default: .kit)
+#   REPO        GitHub owner/repo to fetch the spec from   (default: gaborbencsik/ai)
+#   SPEC        spec filename in the repo                   (default: sbx-spec.yaml)
+#   KIT_DIR     local output dir for the built spec         (default: .kit)
+#   LOCAL_SPEC  if set, use this local file as the source   (skips the download;
+#               for testing working-tree changes without pushing)
 #
 # The built spec is always written as KIT_DIR/spec.yaml because `sbx --kit`
 # requires that exact filename (spec.yaml or spec.yml) inside the kit dir.
@@ -21,17 +23,29 @@ set -euo pipefail
 REPO="${REPO:-gaborbencsik/ai}"
 SPEC="${SPEC:-sbx-spec.yaml}"
 KIT_DIR="${KIT_DIR:-.kit}"
+LOCAL_SPEC="${LOCAL_SPEC:-}"
 # `sbx --kit` looks for spec.yaml / spec.yml in the kit dir, regardless of what
 # the source file is named in the repo, so normalize the output filename here.
 KIT_SPEC="$KIT_DIR/spec.yaml"
 
 mkdir -p "$KIT_DIR"
 
-echo "Downloading: $SPEC from $REPO ..."
-# `gh` runs on the host where it is authenticated; the raw Accept header returns
-# the file contents rather than the JSON metadata wrapper.
-gh api "repos/$REPO/contents/$SPEC" \
-	-H "Accept: application/vnd.github.raw" > "$KIT_SPEC"
+if [ -n "$LOCAL_SPEC" ]; then
+	# Local mode: build from a working-tree file so you can test uncommitted
+	# changes without pushing to the repo.
+	if [ ! -f "$LOCAL_SPEC" ]; then
+		echo "LOCAL_SPEC set but file not found: $LOCAL_SPEC" >&2
+		exit 1
+	fi
+	echo "Using local spec: $LOCAL_SPEC"
+	cp "$LOCAL_SPEC" "$KIT_SPEC"
+else
+	echo "Downloading: $SPEC from $REPO ..."
+	# `gh` runs on the host where it is authenticated; the raw Accept header returns
+	# the file contents rather than the JSON metadata wrapper.
+	gh api "repos/$REPO/contents/$SPEC" \
+		-H "Accept: application/vnd.github.raw" > "$KIT_SPEC"
+fi
 
 read -rsp "ANTHROPIC_API_KEY: " API_KEY
 echo
