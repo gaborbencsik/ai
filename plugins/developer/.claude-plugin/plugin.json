@@ -1,0 +1,20 @@
+{
+  "name": "developer",
+  "displayName": "Developer Agents",
+  "version": "1.0.0",
+  "description": "Engineering specialists: software-engineer (implements features, fixes bugs, writes tests), security-engineer (vulnerability assessment, threat modeling), system-architect (system design, scaling, tech-stack decisions). Toggle with /plugin.",
+  "author": {
+    "name": "Gabor Bencsik",
+    "url": "https://github.com/gaborbencsik"
+  },
+  "homepage": "https://github.com/gaborbencsik/ai",
+  "repository": "https://github.com/gaborbencsik/ai",
+  "license": "MIT",
+  "keywords": [
+    "engineering",
+    "software",
+    "security",
+    "architecture",
+    "agents"
+  ]
+}

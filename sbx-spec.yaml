@@ -210,18 +210,26 @@ commands:
         - -c
         - |
           set -euo pipefail
-          mkdir -p /home/agent/.claude/agents
-          copied=0
-          if [ -d /tmp/gb-skills/agents ]; then
-              for f in /tmp/gb-skills/agents/*.md; do
-                  [ -e "$f" ] || continue
-                  cp -f "$f" /home/agent/.claude/agents/
-                  copied=$((copied + 1))
-              done
-          fi
-          echo "[agents] copied $copied agent(s) from gaborbencsik/ai/agents → ~/.claude/agents"
+          # Land the two agent plugins under the skills-dir. Each dir carries a
+          # .claude-plugin/ so Claude Code auto-registers it as a plugin and
+          # exposes its agents as namespaced subagents (developer:software-engineer,
+          # product-marketing:story-writer, …), toggleable via /plugin. We do NOT
+          # copy agents flat into ~/.claude/agents anymore: the namespaced plugin
+          # form is what lets whole capability sets be switched on/off.
+          mkdir -p /home/agent/.claude/skills
+          for p in developer product-marketing; do
+              if [ -d "/tmp/gb-skills/plugins/$p" ]; then
+                  rm -rf "/home/agent/.claude/skills/$p"
+                  cp -r "/tmp/gb-skills/plugins/$p" "/home/agent/.claude/skills/$p"
+                  test -f "/home/agent/.claude/skills/$p/.claude-plugin/plugin.json" \
+                      || { echo "MISSING: $p/.claude-plugin/plugin.json after copy"; exit 1; }
+                  echo "[agents] installed plugin: $p"
+              else
+                  echo "[agents] WARNING: /tmp/gb-skills/plugins/$p missing, skipping"
+              fi
+          done
       user: "1000"
-      description: Copy personal agents from gaborbencsik/ai (idempotent)
+      description: Install developer + product-marketing agent plugins from gaborbencsik/ai (idempotent)
 
     - command:
         - sh

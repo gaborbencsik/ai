@@ -1,0 +1,16 @@
+{
+  "name": "gb-developer-agents",
+  "description": "Gabor Bencsik's engineering agent bundle for Claude Code — software-engineer, security-engineer, system-architect.",
+  "owner": {
+    "name": "Gabor Bencsik",
+    "url": "https://github.com/gaborbencsik"
+  },
+  "plugins": [
+    {
+      "name": "developer",
+      "source": "./",
+      "description": "Engineering specialists: software-engineer, security-engineer, system-architect.",
+      "version": "1.0.0"
+    }
+  ]
+}

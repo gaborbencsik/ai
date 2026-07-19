@@ -1,0 +1,20 @@
+{
+  "name": "product-marketing",
+  "displayName": "Product & Marketing Agents",
+  "version": "1.0.0",
+  "description": "Product & marketing specialists coordinated by product-orchestrator: product-strategist (what to build & why), story-writer (build-ready user stories), ux-design-expert (flow & usability critique), marketing-strategist (positioning, GTM, copy), plus a bundled system-architect for architecture calls. Toggle with /plugin.",
+  "author": {
+    "name": "Gabor Bencsik",
+    "url": "https://github.com/gaborbencsik"
+  },
+  "homepage": "https://github.com/gaborbencsik/ai",
+  "repository": "https://github.com/gaborbencsik/ai",
+  "license": "MIT",
+  "keywords": [
+    "product",
+    "marketing",
+    "strategy",
+    "ux",
+    "agents"
+  ]
+}

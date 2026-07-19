@@ -1,4 +1,7 @@
 ---
+# DUPLICATE: this is a copy of plugins/developer/agents/system-architect.md so
+# product-orchestrator can reach product-marketing:system-architect even when the
+# developer plugin is disabled. Keep both copies in sync when editing either one.
 name: system-architect
 description: "Senior System Architect for designing scalable, reliable production systems. Use when the user asks for system design, architecture review, tech stack decisions, scaling strategy, data modeling direction, or infrastructure planning. Thinks in tradeoffs and constraints, not ideals."
 model: opus

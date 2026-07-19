@@ -1,0 +1,16 @@
+{
+  "name": "gb-product-marketing-agents",
+  "description": "Gabor Bencsik's product & marketing agent bundle for Claude Code — product-orchestrator, product-strategist, story-writer, ux-design-expert, marketing-strategist, system-architect.",
+  "owner": {
+    "name": "Gabor Bencsik",
+    "url": "https://github.com/gaborbencsik"
+  },
+  "plugins": [
+    {
+      "name": "product-marketing",
+      "source": "./",
+      "description": "Product & marketing specialists coordinated by product-orchestrator, plus a bundled system-architect.",
+      "version": "1.0.0"
+    }
+  ]
+}
