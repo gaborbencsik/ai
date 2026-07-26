@@ -30,7 +30,7 @@ commands:
     - command: "mkdir -p /home/agent/.claude/skills && git clone --depth 1 https://github.com/Valetudox/claude-searxng-plugin /tmp/searxng-plugin && cp -r /tmp/searxng-plugin/.claude/skills/searchx /home/agent/.claude/skills/searchx && cp /tmp/searxng-plugin/.claude/settings.json /home/agent/.claude/settings.json && rm -rf /tmp/searxng-plugin"
       user: "1000"
 
-    - command: "git clone --depth 1 https://github.com/199-biotechnologies/claude-deep-research-skill /home/agent/.claude/skills/deep-research"
+    - command: "rm -rf /home/agent/.claude/skills/deep-research && git clone --depth 1 https://github.com/199-biotechnologies/claude-deep-research-skill /home/agent/.claude/skills/deep-research"
       user: "1000"
 
     # Clone council as a skill only. Its .claude-plugin/ dir makes Claude Code
@@ -40,7 +40,7 @@ commands:
     # into ~/.claude/agents/: that would load a second, standalone copy of the
     # same 18 descriptions into the system prompt (36 total), doubling the
     # always-on context cost for zero benefit.
-    - command: 'git clone --depth 1 https://github.com/0xNyk/council-of-high-intelligence /home/agent/.claude/skills/council'
+    - command: 'rm -rf /home/agent/.claude/skills/council && git clone --depth 1 https://github.com/0xNyk/council-of-high-intelligence /home/agent/.claude/skills/council'
       user: "1000"
 
     - command: "git clone --depth 1 https://github.com/kfchou/wiki-skills /tmp/wiki-skills && cp -r /tmp/wiki-skills/skills/wiki-* /home/agent/.claude/skills/ && rm -rf /tmp/wiki-skills"
