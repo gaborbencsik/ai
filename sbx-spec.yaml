@@ -501,7 +501,16 @@ commands:
           else
             echo "[context-split] not started (telemetry off or already running)"
           fi
-          # Last consumer of the clone — clean it up here.
-          rm -rf /tmp/gb-skills
       user: "1000"
       description: Install + start the context-split token exporter from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          # Dedicated cleanup: remove the gaborbencsik/ai clone after all steps
+          # that consume it have run. Kept as its own final step so any consumer
+          # can be added or reordered without worrying about who deletes it.
+          rm -rf /tmp/gb-skills
+      user: "1000"
+      description: Clean up the gaborbencsik/ai clone (must stay last)
