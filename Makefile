@@ -1,4 +1,8 @@
 SBX_NAME := ai-skills
+# Host-side project label, stamped into OTEL_RESOURCE_ATTRIBUTES at build time
+# (alongside sandbox=$(SBX_NAME)). Kept separate from SBX_NAME so the two labels
+# can diverge later without touching the build wiring.
+PROJECT  := ai-tools
 
 # Source of truth for the kit spec: pulled fresh from the repo on each build.
 REPO     := gaborbencsik/ai
@@ -28,7 +32,7 @@ sbx-create:
 	@mkdir -p $(dir $(SCRIPT))
 	@gh api "repos/$(REPO)/contents/$(SCRIPT)" -H "Accept: application/vnd.github.raw" > $(SCRIPT)
 	@chmod +x $(SCRIPT)
-	@REPO=$(REPO) SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) ./$(SCRIPT)
+	@REPO=$(REPO) SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) PROJECT=$(PROJECT) SANDBOX=$(SBX_NAME) ./$(SCRIPT)
 	sbx create --name $(SBX_NAME) --kit $(KIT_DIR) claude .
 
 # Build from the local working tree (no download): uses this repo's own
@@ -36,7 +40,7 @@ sbx-create:
 # changes before pushing. LOCAL_SPEC tells the script to copy the local spec
 # instead of fetching it.
 sbx-create-local:
-	@LOCAL_SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) ./$(SCRIPT)
+	@LOCAL_SPEC=$(SPEC) KIT_DIR=$(KIT_DIR) PROJECT=$(PROJECT) SANDBOX=$(SBX_NAME) ./$(SCRIPT)
 	sbx create --name $(SBX_NAME) --kit $(KIT_DIR) claude .
 
 sbx-run:

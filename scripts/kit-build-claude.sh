@@ -9,6 +9,8 @@
 #   REPO        GitHub owner/repo to fetch the spec from   (default: gaborbencsik/ai)
 #   SPEC        spec filename in the repo                   (default: sbx-spec.yaml)
 #   KIT_DIR     local output dir for the built spec         (default: .kit)
+#   PROJECT     OTEL project label                          (default: current dir name)
+#   SANDBOX     OTEL sandbox label                          (default: unset -> omitted)
 #   LOCAL_SPEC  if set, use this local file as the source   (skips the download;
 #               for testing working-tree changes without pushing)
 #
@@ -64,3 +66,17 @@ awk -v key="$API_KEY" \
 	"$KIT_SPEC" > "$KIT_SPEC.tmp" && mv "$KIT_SPEC.tmp" "$KIT_SPEC"
 
 echo "Done: key injected -> $KIT_SPEC"
+
+# project + sandbox are build-time, host-side values (like the API key), so we
+# stamp them here. Both are known now: sandbox == the --name passed to `sbx create`.
+# The repo spec ships a generic placeholder; this replaces it with the real labels.
+# Same match()/substr() form as the key (safe for &, /, +, =).
+PROJECT="${PROJECT:-$(basename "$PWD")}"
+SANDBOX="${SANDBOX:-}"
+if [ -n "$SANDBOX" ]; then attrs="project=$PROJECT,sandbox=$SANDBOX"; else attrs="project=$PROJECT"; fi
+
+awk -v attrs="$attrs" \
+	'/^[[:space:]]*OTEL_RESOURCE_ATTRIBUTES:/ { match($0, /^[[:space:]]*/); print substr($0, 1, RLENGTH) "OTEL_RESOURCE_ATTRIBUTES: \"" attrs "\""; next } { print }' \
+	"$KIT_SPEC" > "$KIT_SPEC.tmp" && mv "$KIT_SPEC.tmp" "$KIT_SPEC"
+
+echo "Done: OTEL attrs stamped ($attrs) -> $KIT_SPEC"

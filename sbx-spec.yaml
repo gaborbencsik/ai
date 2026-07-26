@@ -9,13 +9,21 @@ environment:
     ANTHROPIC_MODEL: "anthropic--claude-opus-latest"
     CLAUDE_CODE_ENABLE_TELEMETRY: "1"
     OTEL_METRICS_EXPORTER: "otlp"
+    OTEL_LOGS_EXPORTER: "otlp"
+    # Include the actual prompt text in exported logs (off by default for privacy).
+    # Local/personal use — see llm-usage-foundation.md on content capture being opt-in.
+    OTEL_LOG_USER_PROMPTS: "1"
     OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://host.docker.internal:4318"
+    # Placeholder — the kit-build script stamps the real project/sandbox labels
+    # at build time (host-side values, like the API key).
+    OTEL_RESOURCE_ATTRIBUTES: "project=PLACEHOLDER"
     SEARXNG_URL: "http://host.docker.internal:8888"
     CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "70"
     # Both spellings: some tools (curl, requests) read lowercase, others (Go-based, Docker CLI) read uppercase
-    no_proxy: "localhost,127.0.0.1,::1,gateway.docker.internal"
-    NO_PROXY: "localhost,127.0.0.1,::1,gateway.docker.internal"
+    # host.docker.internal must bypass the proxy so OTLP telemetry (:4318) reaches the host collector directly.
+    no_proxy: "localhost,127.0.0.1,::1,gateway.docker.internal,host.docker.internal"
+    NO_PROXY: "localhost,127.0.0.1,::1,gateway.docker.internal,host.docker.internal"
 
 commands:
   install:
