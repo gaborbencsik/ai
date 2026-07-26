@@ -2,7 +2,7 @@ SBX_NAME := ai-skills
 # Host-side project label, stamped into OTEL_RESOURCE_ATTRIBUTES at build time
 # (alongside sandbox=$(SBX_NAME)). Kept separate from SBX_NAME so the two labels
 # can diverge later without touching the build wiring.
-PROJECT  := ai-tools
+PROJECT  := ai-skills
 
 # Source of truth for the kit spec: pulled fresh from the repo on each build.
 REPO     := gaborbencsik/ai
