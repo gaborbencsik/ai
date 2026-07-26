@@ -328,7 +328,9 @@ commands:
              /home/agent/.claude/skills/md-to-slides/SKILL.md
           cp /tmp/gb-skills/commands/slides.md \
              /home/agent/.claude/commands/slides.md
-          rm -rf /tmp/gb-skills
+          # NOTE: /tmp/gb-skills is deleted by the LAST consumer (the
+          # context-split exporter step), not here — other later steps still
+          # read from it.
       user: "1000"
       description: Install md-to-slides skill+command from gaborbencsik/ai and clean up (idempotent)
 
@@ -473,8 +475,17 @@ commands:
           # count, so this is the only way to get the per-section breakdown into
           # Prometheus/Grafana.
           SRC=/tmp/gb-skills/telemetry/context-split-exporter.py
+          # Defensive: if an earlier step already removed the clone (or it was
+          # never present), re-clone shallowly so this step never silently
+          # skips due to step-ordering changes.
           if [ ! -f "$SRC" ]; then
-            echo "[context-split] $SRC missing, skipping"
+            echo "[context-split] $SRC missing; re-cloning gaborbencsik/ai"
+            rm -rf /tmp/gb-skills
+            git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills \
+              || echo "[context-split] re-clone failed"
+          fi
+          if [ ! -f "$SRC" ]; then
+            echo "[context-split] $SRC still missing, skipping"
             exit 0
           fi
           mkdir -p /home/agent/.claude/bin
@@ -490,5 +501,7 @@ commands:
           else
             echo "[context-split] not started (telemetry off or already running)"
           fi
+          # Last consumer of the clone — clean it up here.
+          rm -rf /tmp/gb-skills
       user: "1000"
       description: Install + start the context-split token exporter from gaborbencsik/ai (idempotent)
