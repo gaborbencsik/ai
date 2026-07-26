@@ -13,6 +13,13 @@ environment:
     # Include the actual prompt text in exported logs (off by default for privacy).
     # Local/personal use — see llm-usage-foundation.md on content capture being opt-in.
     OTEL_LOG_USER_PROMPTS: "1"
+    # One untruncated <uuid>.request.json per API request, holding the raw
+    # Messages API params (system / messages / tools + model). The only source
+    # from which the /context-style input-token split can be reconstructed —
+    # the OTEL token metric only reports a single aggregate input count.
+    # The context-split-exporter daemon (see startup) measures each file and
+    # DELETES it, bounding disk use and prompt-content residency on disk.
+    OTEL_LOG_RAW_API_BODIES: "file:/home/agent/.claude/api-bodies"
     OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://host.docker.internal:4318"
     # Placeholder — the kit-build script stamps the real project/sandbox labels
@@ -451,3 +458,37 @@ commands:
           echo "[qmd-index] embedding started in background (log: /tmp/qmd-embed.log)"
       user: "1000"
       description: Index the project's markdown into qmd on startup (incremental)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # Install + launch the context-split token exporter, sourced from the
+          # gaborbencsik/ai clone (see the "Clone gaborbencsik/ai" step). It
+          # reconstructs the /context input-token split (system / messages /
+          # tools) from the raw request bodies Claude Code writes when
+          # OTEL_LOG_RAW_API_BODIES=file:<dir>, and pushes it to the OTLP
+          # collector — the OTEL token metric only reports one aggregate input
+          # count, so this is the only way to get the per-section breakdown into
+          # Prometheus/Grafana.
+          SRC=/tmp/gb-skills/telemetry/context-split-exporter.py
+          if [ ! -f "$SRC" ]; then
+            echo "[context-split] $SRC missing, skipping"
+            exit 0
+          fi
+          mkdir -p /home/agent/.claude/bin
+          cp "$SRC" /home/agent/.claude/bin/context-split-exporter.py
+          chmod +x /home/agent/.claude/bin/context-split-exporter.py
+          # Idempotent: only start when telemetry is on and not already running
+          # (the script also self-guards on its env vars).
+          if [ "${CLAUDE_CODE_ENABLE_TELEMETRY:-0}" = "1" ] \
+             && ! pgrep -f context-split-exporter.py >/dev/null 2>&1; then
+            nohup python3 /home/agent/.claude/bin/context-split-exporter.py \
+                  >/tmp/context-split-exporter.log 2>&1 &
+            echo "[context-split] exporter started (log: /tmp/context-split-exporter.log)"
+          else
+            echo "[context-split] not started (telemetry off or already running)"
+          fi
+      user: "1000"
+      description: Install + start the context-split token exporter from gaborbencsik/ai (idempotent)
