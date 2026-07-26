@@ -491,15 +491,34 @@ commands:
           mkdir -p /home/agent/.claude/bin
           cp "$SRC" /home/agent/.claude/bin/context-split-exporter.py
           chmod +x /home/agent/.claude/bin/context-split-exporter.py
-          # Idempotent: only start when telemetry is on and not already running
-          # (the script also self-guards on its env vars).
-          if [ "${CLAUDE_CODE_ENABLE_TELEMETRY:-0}" = "1" ] \
-             && ! pgrep -f context-split-exporter.py >/dev/null 2>&1; then
+          # The daemon self-guards on these two vars and exits if either is
+          # unset. They are declared in this spec's environment.variables block,
+          # but that scope is NOT applied to provisioning-step shells (only to
+          # the Claude Code process itself) — so a nohup'd child here would
+          # inherit an empty env and die at boot, which is exactly what the
+          # field report showed (no log file, bodies piling up). Export
+          # deterministic fallbacks that mirror the environment block so the
+          # launch never depends on ambient scope. Any value already in scope
+          # wins; OTEL_RESOURCE_ATTRIBUTES is build-stamped so it has no
+          # hardcodable fallback — its absence only drops the project/sandbox
+          # labels, it does not stop the daemon.
+          export OTEL_LOG_RAW_API_BODIES="${OTEL_LOG_RAW_API_BODIES:-file:/home/agent/.claude/api-bodies}"
+          export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}"
+          # Gate on COLLECTOR REACHABILITY, not on CLAUDE_CODE_ENABLE_TELEMETRY:
+          # that flag is likewise absent from this shell (it defaulted to 0,
+          # which is why the daemon never launched). A curl probe of the OTLP
+          # endpoint is deterministic here and correct for both spec variants —
+          # the proxy build has a collector (start), a collector-less direct
+          # build fails the probe (skip, no wasted POST loop). No -f, so any
+          # HTTP response (even 404/405 from the OTLP root) counts as reachable;
+          # only a connection failure (exit != 0) skips.
+          if ! pgrep -f context-split-exporter.py >/dev/null 2>&1 \
+             && curl -s -o /dev/null --max-time 3 "$OTEL_EXPORTER_OTLP_ENDPOINT"; then
             nohup python3 /home/agent/.claude/bin/context-split-exporter.py \
                   >/tmp/context-split-exporter.log 2>&1 &
             echo "[context-split] exporter started (log: /tmp/context-split-exporter.log)"
           else
-            echo "[context-split] not started (telemetry off or already running)"
+            echo "[context-split] not started (collector unreachable or already running)"
           fi
       user: "1000"
       description: Install + start the context-split token exporter from gaborbencsik/ai (idempotent)
