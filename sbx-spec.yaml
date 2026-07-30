@@ -297,6 +297,63 @@ commands:
         - -c
         - |
           set -euo pipefail
+          # The sandbox image bakes a ~19 KB /Users/.../Hobby/CLAUDE.md (the
+          # "# Project Guidance" + sandbox/persistent-env/network boilerplate)
+          # into the writable overlay layer. Claude Code walks UP the directory
+          # tree and loads every ancestor CLAUDE.md, so this parent file costs
+          # ~7.5k tokens of context on EVERY session start even though the real
+          # project lives in a subdir. It is not on the host disk and the spec
+          # does not create it, so we are free to shrink it in place: replace it
+          # with a short stub that keeps only the rules that actually bite,
+          # dropping ~90% of the tokens. WORKSPACE_DIR is the direct-mode host
+          # mount (set on PID 1's env); its parent is where the baked file sits.
+          # Idempotent: the stub starts with a marker line we grep for.
+          # We only ever shrink an EXISTING baked file — if WORKSPACE_DIR is
+          # unset or no parent CLAUDE.md exists, we do not know where the baked
+          # file lives, so we skip rather than drop a stray stub in the wrong dir.
+          if [ -z "${WORKSPACE_DIR:-}" ]; then
+            echo "[skip] WORKSPACE_DIR unset; cannot locate parent CLAUDE.md"
+            exit 0
+          fi
+          BAKED="$(dirname "$WORKSPACE_DIR")/CLAUDE.md"
+          MARKER="<!-- sandbox-stub v1 -->"
+          if [ ! -f "$BAKED" ]; then
+            echo "[skip] no parent CLAUDE.md at $BAKED; nothing to stub"
+          elif head -1 "$BAKED" | grep -qF "$MARKER"; then
+            echo "[OK] parent CLAUDE.md already stubbed, no change"
+          else
+            cat > "$BAKED" <<STUB
+          $MARKER
+          # Sandbox notes
+
+          Minimal parent memory — the sandbox baked a large CLAUDE.md here that
+          cost ~7.5k tokens per session; this stub keeps only what bites.
+
+          - **Persistent env** (\`/etc/sandbox-persistent.sh\`, sourced before every
+            Bash call): append \`export\`s to persist across shells. NEVER add shell
+            completion scripts — they read \`COMP_*\` vars absent outside completion
+            and silently break every Bash command. If a tool is missing from PATH,
+            run it via \`bash -l -c "..."\`.
+          - **Git**: push and open PRs directly from inside the sandbox — auth is
+            injected at the proxy. \`gh auth status\` showing "not logged in" is
+            expected and does not block push. Do not ask the user to push locally.
+          - **Workspace mode**: direct mode (default) mounts the host tree, so edits
+            appear on the host immediately; clone mode keeps commits in-sandbox until
+            fetched. Check: \`[ -d /run/sandbox/source ] && echo clone || echo direct\`.
+          - **Network**: blocked HTTP returns 403 with a structured reason body; a
+            default-deny domain is fixed on the host with \`sbx policy allow network <domain>\`.
+          - Full original guidance (if ever needed) is reconstructable from the spec.
+          STUB
+            echo "[OK] replaced parent CLAUDE.md with short stub ($BAKED)"
+          fi
+      user: "1000"
+      description: Replace the image-baked parent CLAUDE.md with a short stub (~7.5k token context saving; idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
           mkdir -p /home/agent/.claude/skills/semble-search /home/agent/.claude/commands
           cp /tmp/gb-skills/skills/semble-search/SKILL.md \
              /home/agent/.claude/skills/semble-search/SKILL.md
@@ -362,17 +419,29 @@ commands:
               if servers.get(name) != spec:
                   servers[name] = spec
                   changed = True
+          # Playwright ships ~24 browser_* tools (~6k tokens of context) that most
+          # sessions never touch. Keep it REGISTERED (installed + toggleable) but
+          # OFF by default: Claude Code honours the top-level "disabledMcpServers"
+          # list, so its tools are not loaded on startup. The user re-enables it
+          # anytime from the /mcp panel (which rewrites this list for them).
+          disabled = cfg.get("disabledMcpServers")
+          if not isinstance(disabled, list):
+              disabled = []
+          if "playwright" not in disabled:
+              disabled.append("playwright")
+              changed = True
           if not changed:
-              print("[OK] semble + qmd + playwright MCP servers already registered, no change")
+              print("[OK] semble + qmd + playwright MCP servers already registered (playwright disabled by default), no change")
           else:
               cfg["mcpServers"] = servers
+              cfg["disabledMcpServers"] = disabled
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json")
+              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json (playwright disabled by default)")
           PY
       user: "1000"
-      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (idempotent)
+      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (playwright disabled by default, idempotent)
 
     - command:
         - bash
