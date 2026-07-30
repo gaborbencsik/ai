@@ -1,6 +1,6 @@
 ---
 name: qmd
-description: On-device semantic + keyword search over your local markdown notes, docs, and transcripts via the qmd MCP server. Use when you need to find, recall, or retrieve something from your personal knowledge base (notes, meetings, docs) — anywhere you would otherwise `grep` through `~/notes`, `~/Documents`, or similar collections. Triggers: "search my notes", "find in my notes", "what did I write about", "recall from meeting", "look up in my docs", "search my knowledge base", "find that note about". DO NOT use for: current-repo code search (semble-search), web search (searchx), or reading a known-path file (Read).
+description: On-device semantic + keyword search over your local markdown notes, docs, and transcripts via the qmd MCP server. Use to recall or retrieve from your personal knowledge base — "search my notes", "what did I write about", "recall from meeting", "search my knowledge base". Not for current-repo code (semble-search), the web (searchx), or a known file path (Read).
 ---
 
 # qmd

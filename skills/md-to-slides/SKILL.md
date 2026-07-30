@@ -1,6 +1,6 @@
 ---
 name: md-to-slides
-description: Convert a Markdown file into a self-contained HTML slide deck using Marp (`npx @marp-team/marp-cli --html`). Use when the user wants to turn notes/docs/an outline into presentable slides, or asks to "make slides", "generate a slide deck", "turn this into a presentation", "md to slides", "marp". Includes an overflow-safe path: if the source Markdown is not structured for slides (content would overflow a slide), it first writes a restructured copy to a temp file, renders from that, verifies, then cleans the temp file up. DO NOT use for: PDF/PPTX export unless asked (Marp can, but default is HTML), non-slide HTML rendering, or editing the original doc in place.
+description: Convert a Markdown file into a self-contained HTML slide deck using Marp. Use for "make slides", "generate a slide deck", "turn this into a presentation", "md to slides", "marp". Not for PDF/PPTX export unless asked, non-slide HTML rendering, or editing the original doc in place.
 ---
 
 # md-to-slides

@@ -1,6 +1,6 @@
 ---
 name: semble-search
-description: Semantic code search via the semble MCP against the current working directory (or any local/remote repo). Use when you need to locate code by intent/behavior, find an implementation, understand how something works, or discover related code — anywhere you would otherwise fan out with Grep/Glob/Read for exploration. Triggers: "find in code", "where is", "where does", "show me where", "how does X work", "which file handles", "locate implementation", "related code", "similar code", "find similar implementation", "search the codebase". DO NOT use for: editing a specific known file (Edit), exact string search in a known file (Grep), reading README/CLAUDE.md (Read), web search (WebSearch/searchx).
+description: Semantic code search via the semble MCP over the current repo (or any local/remote repo). Use to locate code by intent/behavior, find an implementation, or discover related code — "where is", "how does X work", "which file handles", "find similar implementation", "search the codebase". Not for editing a known file (Edit), exact string search (Grep), or web search (searchx).
 ---
 
 # semble-search
