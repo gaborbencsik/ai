@@ -457,29 +457,75 @@ commands:
               if servers.get(name) != spec:
                   servers[name] = spec
                   changed = True
+
           # Playwright ships ~24 browser_* tools (~6k tokens of context) that most
           # sessions never touch. Keep it REGISTERED (installed + toggleable) but
-          # OFF by default: Claude Code honours the top-level "disabledMcpServers"
-          # list, so its tools are not loaded on startup. The user re-enables it
-          # anytime from the /mcp panel (which rewrites this list for them).
-          disabled = cfg.get("disabledMcpServers")
-          if not isinstance(disabled, list):
-              disabled = []
-          if "playwright" not in disabled:
-              disabled.append("playwright")
+          # OFF by default so its tools are not loaded into the startup context.
+          # The user re-enables it anytime from the /mcp panel.
+          #
+          # CRITICAL — scope: `disabledMcpServers` is read PER-PROJECT, not
+          # top-level. Verified against the 2.1.220 binary: the config accessor
+          # returns `cfg.projects[<cwd>]` and the built-in `/mcp` help says the
+          # toggle "persists to 'disabledMcpServers' in the PROJECT ENTRY of
+          # ~/.claude.json". An earlier top-level `cfg["disabledMcpServers"]` was
+          # therefore silently ignored — all 24 tools loaded despite it. The fix
+          # is to write the key under the project entry keyed by the session cwd.
+          #
+          # We don't know the exact cwd at build time, so cover every candidate:
+          #   - the direct-mode host mount ($WORKSPACE_DIR, on PID 1's env)
+          #   - the clone-mode read-only tree (/run/sandbox/source)
+          #   - every project entry Claude Code has already created
+          # Writing to all of them is safe and idempotent. Top-level is also kept
+          # as a harmless fallback in case a future version honours it.
+          def ensure_disabled(entry):
+              d = entry.get("disabledMcpServers")
+              if not isinstance(d, list):
+                  d = []
+              if "playwright" not in d:
+                  d.append("playwright")
+                  entry["disabledMcpServers"] = d
+                  return True
+              entry["disabledMcpServers"] = d
+              return False
+
+          projects = cfg.get("projects")
+          if not isinstance(projects, dict):
+              projects = {}
+          candidates = set(projects.keys())
+          ws = os.environ.get("WORKSPACE_DIR")
+          if ws:
+              candidates.add(ws)
+          if os.path.isdir("/run/sandbox/source"):
+              candidates.add("/run/sandbox/source")
+          for path in candidates:
+              entry = projects.get(path)
+              if not isinstance(entry, dict):
+                  entry = {}
+              if ensure_disabled(entry):
+                  changed = True
+              projects[path] = entry
+
+          # Top-level fallback (harmless; ignored by 2.1.220 but future-proof).
+          top = cfg.get("disabledMcpServers")
+          if not isinstance(top, list):
+              top = []
+          if "playwright" not in top:
+              top.append("playwright")
               changed = True
+
           if not changed:
-              print("[OK] semble + qmd + playwright MCP servers already registered (playwright disabled by default), no change")
+              print("[OK] semble + qmd + playwright MCP servers already registered (playwright disabled per-project), no change")
           else:
               cfg["mcpServers"] = servers
-              cfg["disabledMcpServers"] = disabled
+              cfg["projects"] = projects
+              cfg["disabledMcpServers"] = top
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json (playwright disabled by default)")
+              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json (playwright disabled per-project + top-level fallback)")
           PY
       user: "1000"
-      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (playwright disabled by default, idempotent)
+      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (playwright disabled per-project, idempotent)
 
     - command:
         - bash
