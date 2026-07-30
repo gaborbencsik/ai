@@ -50,8 +50,39 @@ commands:
     - command: 'rm -rf /home/agent/.claude/skills/council && git clone --depth 1 https://github.com/0xNyk/council-of-high-intelligence /home/agent/.claude/skills/council'
       user: "1000"
 
-    - command: "git clone --depth 1 https://github.com/kfchou/wiki-skills /tmp/wiki-skills && cp -r /tmp/wiki-skills/skills/wiki-* /home/agent/.claude/skills/ && rm -rf /tmp/wiki-skills"
+    # Package the 7 wiki-* skills as a single DISABLED plugin instead of 7 flat
+    # skills. Flat skills load their description into the system prompt on EVERY
+    # session (~0.5k always-on); bundling them under a .claude-plugin/ dir makes
+    # Claude Code auto-register them as one toggleable plugin whose skill
+    # descriptions stay OUT of context until enabled via /plugin (same mechanism
+    # as council/developer/product-marketing — verified: council bundles a
+    # skills/ subdir yet none of its skills appear in /context while disabled).
+    # enabledPlugins seeds "wiki@skills-dir": false at startup.
+    - command: |
+        set -euo pipefail
+        git clone --depth 1 https://github.com/kfchou/wiki-skills /tmp/wiki-skills
+        rm -rf /home/agent/.claude/skills/wiki
+        mkdir -p /home/agent/.claude/skills/wiki/.claude-plugin \
+                 /home/agent/.claude/skills/wiki/skills
+        cp -r /tmp/wiki-skills/skills/wiki-* /home/agent/.claude/skills/wiki/skills/
+        # Remove any pre-existing flat wiki-* dirs from an older install layout.
+        rm -rf /home/agent/.claude/skills/wiki-*
+        cat > /home/agent/.claude/skills/wiki/.claude-plugin/plugin.json <<'JSON'
+        {
+          "name": "wiki",
+          "displayName": "Personal Wiki",
+          "version": "1.0.0",
+          "description": "Build and query a personal markdown wiki: init, ingest, update, query, lint, audit, and merge pages. Toggle with /plugin.",
+          "author": {"name": "kfchou", "url": "https://github.com/kfchou"},
+          "homepage": "https://github.com/kfchou/wiki-skills",
+          "repository": "https://github.com/kfchou/wiki-skills",
+          "license": "MIT",
+          "keywords": ["wiki", "notes", "knowledge-base", "markdown"]
+        }
+        JSON
+        rm -rf /tmp/wiki-skills
       user: "1000"
+      description: Install wiki-* skills as a single disabled plugin (context-lean)
 
     - command: 'uv tool install "semble[mcp]"'
       user: "1000"
@@ -181,7 +212,8 @@ commands:
         for d in searchx deep-research council; do
           test -d "/home/agent/.claude/skills/$d" || { echo "MISSING: $d"; exit 1; }
         done
-        ls /home/agent/.claude/skills/wiki-* >/dev/null || { echo "MISSING: wiki-*"; exit 1; }
+        test -f /home/agent/.claude/skills/wiki/.claude-plugin/plugin.json || { echo "MISSING: wiki plugin"; exit 1; }
+        ls /home/agent/.claude/skills/wiki/skills/wiki-* >/dev/null || { echo "MISSING: wiki-* skills"; exit 1; }
         command -v semble >/dev/null || { echo "MISSING: semble"; exit 1; }
         test -f /home/agent/.claude/agents/semble-search.md || { echo "MISSING: semble-search agent"; exit 1; }
         # qmd + playwright-mcp — source nvm so PATH is populated in this non-login shell
@@ -253,16 +285,18 @@ commands:
           python3 - <<'PY'
           import json, os, pathlib, stat
           # Seed enabledPlugins so a fresh sandbox starts with a LEAN always-on
-          # context: all three plugins register (auto-discovered from skills-dir)
-          # but load DISABLED, keeping their agent descriptions out of the system
-          # prompt until switched on via /plugin. Keys not listed here keep Claude
-          # Code's default. NOTE: the authoritative store is ~/.claude/settings.json
-          # (the top-level ~/.claude.json is app-state and is NOT read for this) —
-          # so we merge into settings.json, preserving hooks and other keys.
+          # context: all four plugins register (auto-discovered from skills-dir)
+          # but load DISABLED, keeping their agent/skill descriptions out of the
+          # system prompt until switched on via /plugin. Keys not listed here keep
+          # Claude Code's default. NOTE: the authoritative store is
+          # ~/.claude/settings.json (the top-level ~/.claude.json is app-state and
+          # is NOT read for this) — so we merge into settings.json, preserving
+          # hooks and other keys.
           desired = {
               "council@skills-dir": False,
               "developer@skills-dir": False,
               "product-marketing@skills-dir": False,
+              "wiki@skills-dir": False,
           }
           p = pathlib.Path.home() / ".claude" / "settings.json"
           cfg = {}
@@ -287,10 +321,10 @@ commands:
               if p.exists():
                   os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
               p.write_text(json.dumps(cfg, indent=2) + "\n")
-              print("[OK] seeded enabledPlugins in settings.json: council + developer + product-marketing all off")
+              print("[OK] seeded enabledPlugins in settings.json: council + developer + product-marketing + wiki all off")
           PY
       user: "1000"
-      description: Seed enabledPlugins in ~/.claude/settings.json (council + developer + product-marketing all off; idempotent)
+      description: Seed enabledPlugins in ~/.claude/settings.json (council + developer + product-marketing + wiki all off; idempotent)
 
     - command:
         - sh
@@ -354,13 +388,17 @@ commands:
         - -c
         - |
           set -euo pipefail
-          mkdir -p /home/agent/.claude/skills/semble-search /home/agent/.claude/commands
-          cp /tmp/gb-skills/skills/semble-search/SKILL.md \
-             /home/agent/.claude/skills/semble-search/SKILL.md
+          # Only the /semble command — NOT a semble-search SKILL.md. The command
+          # delegates to the `semble-search` subagent (installed flat in
+          # ~/.claude/agents), whose description already loads for auto-delegation;
+          # a parallel SKILL.md just duplicated that ~240 tokens into the system
+          # prompt for zero added capability. Drop any stale copy from older installs.
+          mkdir -p /home/agent/.claude/commands
+          rm -rf /home/agent/.claude/skills/semble-search
           cp /tmp/gb-skills/commands/semble.md \
              /home/agent/.claude/commands/semble.md
       user: "1000"
-      description: Install semble skill+command from gaborbencsik/ai (idempotent)
+      description: Install semble /command from gaborbencsik/ai (agent-only, no redundant SKILL; idempotent)
 
     - command:
         - sh
