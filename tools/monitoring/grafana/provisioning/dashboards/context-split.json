@@ -1,0 +1,157 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "label": "Data source"
+      },
+      {
+        "name": "project",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(claude_code_context_section_tokens_total, project)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "label": "Project"
+      },
+      {
+        "name": "sandbox",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(claude_code_context_section_tokens_total{project=~\"$project\"}, sandbox)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "label": "Sandbox"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "System prompt tokens",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\", section=\"system\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Messages tokens",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\", section=\"messages\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Tool definitions tokens",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\", section=\"tools\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total context tokens",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Context split (system / messages / tools)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (section) (max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))", "legendFormat": "{{section}}", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Context tokens by project",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 40, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (project) (max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))", "legendFormat": "{{project}}", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Context tokens by sandbox",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 40, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (sandbox) (max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))", "legendFormat": "{{sandbox}}", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Context split by project & sandbox",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 40, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (project, sandbox, section) (max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))", "legendFormat": "{{project}} / {{sandbox}} — {{section}}", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Per-call context tokens (increments over time)",
+      "description": "The exporter emits a cumulative counter that bumps once per API request. increase() over a fine interval surfaces each call's per-section contribution — the closest per-call view available from a cumulative metric.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" }, "pointSize": 6 } } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (section) (increase(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__rate_interval]))", "legendFormat": "{{section}}" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Breakdown by project / sandbox / section",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "align": "auto" } } },
+      "options": { "showHeader": true },
+      "targets": [
+        { "refId": "A", "expr": "sum by (project, sandbox, model, section) (max_over_time(claude_code_context_section_tokens_total{project=~\"$project\", sandbox=~\"$sandbox\"}[$__range]))", "format": "table", "instant": true }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "Value": "tokens" } } }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["claude-code", "context-split"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "browser",
+  "title": "Context Split — per project / sandbox / call",
+  "uid": "context-split",
+  "version": 1
+}

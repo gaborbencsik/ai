@@ -1,0 +1,278 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "title": "pi agent — usage, tools & traces",
+  "uid": "pi-agent-overview",
+  "tags": ["pi", "agent", "llm"],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "label": "Metrics source"
+      },
+      {
+        "name": "loki",
+        "type": "datasource",
+        "query": "loki",
+        "current": {},
+        "hide": 0,
+        "label": "Logs source"
+      },
+      {
+        "name": "tempo",
+        "type": "datasource",
+        "query": "tempo",
+        "current": {},
+        "hide": 0,
+        "label": "Traces source"
+      },
+      {
+        "name": "project",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(pi_tokens_input_total, project)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "label": "Project"
+      },
+      {
+        "name": "model",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(pi_tokens_input_total{project=~\"$project\"}, model)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "label": "Model"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Total cost (USD)",
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4, "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null } ] } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_cost_usd_USD_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Input tokens (total incl. cache)",
+      "description": "Full inbound token volume = fresh input + cache_read + cache_write. With prompt caching the fresh 'input' is tiny; most inbound tokens are cache reads.",
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__range])) + sum(max_over_time(pi_tokens_cache_read_total{project=~\"$project\", model=~\"$model\"}[$__range])) + sum(max_over_time(pi_tokens_cache_write_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Output tokens",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_output_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "New input (uncached)",
+      "description": "Fresh, non-cached input tokens only (pi usage.input). Near-zero when prompt caching is active — the rest is under cache_read/cache_write.",
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Turns",
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_turns_total{project=~\"$project\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Tool calls",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "yellow" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tool_calls_total{project=~\"$project\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Tokens",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Total input (incl. cache)",
+      "description": "input + cache_read + cache_write — full inbound token volume.",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__range])) + sum(max_over_time(pi_tokens_cache_read_total{project=~\"$project\", model=~\"$model\"}[$__range])) + sum(max_over_time(pi_tokens_cache_write_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "New input (uncached)",
+      "description": "Fresh, non-cached input only (pi usage.input). Near-zero with prompt caching.",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cache read",
+      "description": "Input tokens served from the prompt cache.",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "purple" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_cache_read_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cache write",
+      "description": "Input tokens written into the prompt cache.",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "yellow" } } },
+      "targets": [
+        { "refId": "A", "expr": "sum(max_over_time(pi_tokens_cache_write_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token rate — input vs output (tokens/min)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15, "stacking": { "mode": "none" } } } },
+      "targets": [
+        { "refId": "A", "legendFormat": "input", "expr": "sum(rate(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__rate_interval])) * 60" },
+        { "refId": "B", "legendFormat": "output", "expr": "sum(rate(pi_tokens_output_total{project=~\"$project\", model=~\"$model\"}[$__rate_interval])) * 60" },
+        { "refId": "C", "legendFormat": "cache_read", "expr": "sum(rate(pi_tokens_cache_read_total{project=~\"$project\", model=~\"$model\"}[$__rate_interval])) * 60" },
+        { "refId": "D", "legendFormat": "cache_write", "expr": "sum(rate(pi_tokens_cache_write_total{project=~\"$project\", model=~\"$model\"}[$__rate_interval])) * 60" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Tokens by model (cumulative, input+output)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{model}} input", "expr": "sum by (model) (max_over_time(pi_tokens_input_total{project=~\"$project\", model=~\"$model\"}[$__range]))" },
+        { "refId": "B", "legendFormat": "{{model}} output", "expr": "sum by (model) (max_over_time(pi_tokens_output_total{project=~\"$project\", model=~\"$model\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Cost & tools",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Cost rate (USD/min)",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4, "custom": { "drawStyle": "line", "fillOpacity": 20 } } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{model}}", "expr": "sum by (model) (rate(pi_cost_usd_USD_total{project=~\"$project\", model=~\"$model\"}[$__rate_interval])) * 60" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Tool calls by tool",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{tool_name}}", "expr": "sum by (tool_name) (max_over_time(pi_tool_calls_total{project=~\"$project\"}[$__range]))" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Tool duration p95 (ms)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{tool_name}}", "expr": "max by (tool_name) (pi_tool_duration_milliseconds{project=~\"$project\"})" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Logs (Loki)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "logs",
+      "title": "pi activity log — prompts, tool calls, usage",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 25 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "options": { "showTime": true, "wrapLogMessage": true, "dedupStrategy": "none", "enableLogDetails": true, "sortOrder": "Descending" },
+      "targets": [
+        { "refId": "A", "expr": "{service_name=\"pi-agent\"} | json" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Traces (Tempo)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Recent turns & tool spans",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 36 },
+      "datasource": { "type": "tempo", "uid": "${tempo}" },
+      "targets": [
+        { "refId": "A", "queryType": "traceql", "query": "{ resource.service.name = \"pi-agent\" }", "tableType": "traces", "limit": 50 }
+      ]
+    }
+  ]
+}

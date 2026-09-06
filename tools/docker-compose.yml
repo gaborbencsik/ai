@@ -1,0 +1,104 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./searxng:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    restart: unless-stopped
+
+  # --- LLM usage metrics & tracing --------------------------------------
+  # Receiving end for Claude Code / pi agent telemetry. Point the agent at
+  # http://localhost:4317 (gRPC) on the host, or http://host.docker.internal:4318
+  # (http/protobuf) from a sandbox. See llm-usage-foundation.md.
+
+  # OpenTelemetry Collector: single ingest point. Fans metrics out to
+  # Prometheus (scraped at :8889) and traces to Tempo.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC (host agents)
+      - "4318:4318"   # OTLP http/protobuf (sandbox agents)
+      - "8889:8889"   # Prometheus-format metrics (scrape target)
+    depends_on:
+      - tempo
+    restart: unless-stopped
+
+  # Prometheus: stores metrics, evaluates staleness-safe recording rules.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"   # >= cost-analysis window
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/recording-rules.yml:/etc/prometheus/recording-rules.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9091:9090"
+    restart: unless-stopped
+
+  # Tempo: trace store. Holds full prompt/completion content as span events
+  # (GenAI semantic conventions), queryable via TraceQL.
+  tempo:
+    # NOTE: do NOT use grafana/tempo:latest — that tag is stale on Docker Hub
+    # and points at an ancient build with an incompatible config schema
+    # (rejects the ingester/compactor fields). Always pin a real version.
+    image: grafana/tempo:2.6.1
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo API / TraceQL
+    restart: unless-stopped
+
+  # Loki: log store for agent prompt/completion content. Claude Code exports
+  # user prompts (and optionally completions) as OTLP logs when
+  # OTEL_LOGS_EXPORTER=otlp is set; the collector forwards them here. Queryable
+  # via LogQL in Grafana — content visibility without switching to the pi agent.
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"   # Loki API / OTLP ingest
+    restart: unless-stopped
+
+  # Grafana: dashboards + TraceQL browsing. Datasources pre-provisioned;
+  # agents can drop dashboard JSON into the provisioning folder.
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"   # host 3001 -> container 3000 (3000 was already in use)
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  tempo-data:
+  loki-data:
+  grafana-data:

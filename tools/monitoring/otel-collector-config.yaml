@@ -1,0 +1,46 @@
+# OpenTelemetry Collector — receiving end for Claude Code / pi agent telemetry.
+# Accepts OTLP over gRPC (4317) and HTTP/protobuf (4318). The HTTP endpoint is
+# what sandboxed agents use: the agent process exits before a gRPC batch flushes
+# and the traces get lost, so sandbox runs point at 4318.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+
+exporters:
+  # Metrics -> Prometheus (scraped by Prometheus from this collector).
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true    # turn OTEL_RESOURCE_ATTRIBUTES (project, team, user) into labels
+  # Traces -> Tempo (prompt/completion content lives in span events).
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  # Logs -> Loki via its native OTLP endpoint. Claude Code exports user prompts
+  # (and optionally completions) as log records when OTEL_LOGS_EXPORTER=otlp.
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]

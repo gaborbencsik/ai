@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<!-- saved from url=(0081)https://solid-adventure-92vj45m.pages.github.io/experiments/llm-usage-foundation/ -->
+<html lang="en" class=" uuwfaqio idc0_350"><script src="chrome-extension://lgmpcpglpngdoalbgeoldeajfclnhafa/aptosSDK.js"></script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Delegation Diary</title>
+    <script type="module" crossorigin="" src="./llm-usage-foundation_files/index-Dh6lX8Ts.js"></script>
+    <link rel="stylesheet" crossorigin="" href="./llm-usage-foundation_files/index-CLZ41rCu.css">
+  <style id="vuetify-theme-stylesheet" type="text/css">:root {
+      --v-theme-background: 250,248,248;
+      --v-theme-background-overlay-multiplier: 1;
+      --v-theme-surface: 255,255,255;
+      --v-theme-surface-overlay-multiplier: 1;
+      --v-theme-surface-bright: 255,255,255;
+      --v-theme-surface-bright-overlay-multiplier: 1;
+      --v-theme-surface-light: 238,238,238;
+      --v-theme-surface-light-overlay-multiplier: 1;
+      --v-theme-surface-variant: 66,66,66;
+      --v-theme-surface-variant-overlay-multiplier: 2;
+      --v-theme-on-surface-variant: 238,238,238;
+      --v-theme-primary: 40,75,99;
+      --v-theme-primary-overlay-multiplier: 2;
+      --v-theme-primary-darken-1: 31,85,146;
+      --v-theme-primary-darken-1-overlay-multiplier: 2;
+      --v-theme-secondary: 132,165,157;
+      --v-theme-secondary-overlay-multiplier: 1;
+      --v-theme-secondary-darken-1: 1,135,134;
+      --v-theme-secondary-darken-1-overlay-multiplier: 1;
+      --v-theme-error: 176,0,32;
+      --v-theme-error-overlay-multiplier: 2;
+      --v-theme-info: 123,151,170;
+      --v-theme-info-overlay-multiplier: 1;
+      --v-theme-success: 58,142,90;
+      --v-theme-success-overlay-multiplier: 1;
+      --v-theme-warning: 230,167,0;
+      --v-theme-warning-overlay-multiplier: 1;
+      --v-theme-accent: 242,132,130;
+      --v-theme-accent-overlay-multiplier: 1;
+      --v-theme-on-background: 43,43,43;
+      --v-theme-on-surface: 43,43,43;
+      --v-theme-on-surface-bright: 0,0,0;
+      --v-theme-on-surface-light: 0,0,0;
+      --v-theme-on-primary: 255,255,255;
+      --v-theme-on-primary-darken-1: 255,255,255;
+      --v-theme-on-secondary: 255,255,255;
+      --v-theme-on-secondary-darken-1: 255,255,255;
+      --v-theme-on-error: 255,255,255;
+      --v-theme-on-info: 255,255,255;
+      --v-theme-on-success: 255,255,255;
+      --v-theme-on-warning: 0,0,0;
+      --v-theme-on-accent: 255,255,255;
+      --v-border-color: 0, 0, 0;
+      --v-border-opacity: 0.12;
+      --v-high-emphasis-opacity: 0.87;
+      --v-medium-emphasis-opacity: 0.6;
+      --v-disabled-opacity: 0.38;
+      --v-idle-opacity: 0.04;
+      --v-hover-opacity: 0.04;
+      --v-focus-opacity: 0.12;
+      --v-selected-opacity: 0.08;
+      --v-activated-opacity: 0.12;
+      --v-pressed-opacity: 0.12;
+      --v-dragged-opacity: 0.08;
+      --v-theme-kbd: 238, 238, 238;
+      --v-theme-on-kbd: 0, 0, 0;
+      --v-theme-code: 245, 245, 245;
+      --v-theme-on-code: 0, 0, 0;
+    }
+    .v-theme--light {
+      color-scheme: normal;
+      --v-theme-background: 255,255,255;
+      --v-theme-background-overlay-multiplier: 1;
+      --v-theme-surface: 255,255,255;
+      --v-theme-surface-overlay-multiplier: 1;
+      --v-theme-surface-bright: 255,255,255;
+      --v-theme-surface-bright-overlay-multiplier: 1;
+      --v-theme-surface-light: 238,238,238;
+      --v-theme-surface-light-overlay-multiplier: 1;
+      --v-theme-surface-variant: 66,66,66;
+      --v-theme-surface-variant-overlay-multiplier: 2;
+      --v-theme-on-surface-variant: 238,238,238;
+      --v-theme-primary: 24,103,192;
+      --v-theme-primary-overlay-multiplier: 2;
+      --v-theme-primary-darken-1: 31,85,146;
+      --v-theme-primary-darken-1-overlay-multiplier: 2;
+      --v-theme-secondary: 72,169,166;
+      --v-theme-secondary-overlay-multiplier: 1;
+      --v-theme-secondary-darken-1: 1,135,134;
+      --v-theme-secondary-darken-1-overlay-multiplier: 1;
+      --v-theme-error: 176,0,32;
+      --v-theme-error-overlay-multiplier: 2;
+      --v-theme-info: 33,150,243;
+      --v-theme-info-overlay-multiplier: 1;
+      --v-theme-success: 76,175,80;
+      --v-theme-success-overlay-multiplier: 1;
+      --v-theme-warning: 251,140,0;
+      --v-theme-warning-overlay-multiplier: 1;
+      --v-theme-on-background: 0,0,0;
+      --v-theme-on-surface: 0,0,0;
+      --v-theme-on-surface-bright: 0,0,0;
+      --v-theme-on-surface-light: 0,0,0;
+      --v-theme-on-primary: 255,255,255;
+      --v-theme-on-primary-darken-1: 255,255,255;
+      --v-theme-on-secondary: 255,255,255;
+      --v-theme-on-secondary-darken-1: 255,255,255;
+      --v-theme-on-error: 255,255,255;
+      --v-theme-on-info: 255,255,255;
+      --v-theme-on-success: 255,255,255;
+      --v-theme-on-warning: 255,255,255;
+      --v-border-color: 0, 0, 0;
+      --v-border-opacity: 0.12;
+      --v-high-emphasis-opacity: 0.87;
+      --v-medium-emphasis-opacity: 0.6;
+      --v-disabled-opacity: 0.38;
+      --v-idle-opacity: 0.04;
+      --v-hover-opacity: 0.04;
+      --v-focus-opacity: 0.12;
+      --v-selected-opacity: 0.08;
+      --v-activated-opacity: 0.12;
+      --v-pressed-opacity: 0.12;
+      --v-dragged-opacity: 0.08;
+      --v-theme-kbd: 238, 238, 238;
+      --v-theme-on-kbd: 0, 0, 0;
+      --v-theme-code: 245, 245, 245;
+      --v-theme-on-code: 0, 0, 0;
+    }
+    .v-theme--dark {
+      color-scheme: dark;
+      --v-theme-background: 18,18,18;
+      --v-theme-background-overlay-multiplier: 1;
+      --v-theme-surface: 33,33,33;
+      --v-theme-surface-overlay-multiplier: 1;
+      --v-theme-surface-bright: 204,191,214;
+      --v-theme-surface-bright-overlay-multiplier: 2;
+      --v-theme-surface-light: 66,66,66;
+      --v-theme-surface-light-overlay-multiplier: 1;
+      --v-theme-surface-variant: 200,200,200;
+      --v-theme-surface-variant-overlay-multiplier: 2;
+      --v-theme-on-surface-variant: 0,0,0;
+      --v-theme-primary: 33,150,243;
+      --v-theme-primary-overlay-multiplier: 2;
+      --v-theme-primary-darken-1: 39,124,193;
+      --v-theme-primary-darken-1-overlay-multiplier: 2;
+      --v-theme-secondary: 84,182,178;
+      --v-theme-secondary-overlay-multiplier: 2;
+      --v-theme-secondary-darken-1: 72,169,166;
+      --v-theme-secondary-darken-1-overlay-multiplier: 2;
+      --v-theme-error: 207,102,121;
+      --v-theme-error-overlay-multiplier: 2;
+      --v-theme-info: 33,150,243;
+      --v-theme-info-overlay-multiplier: 2;
+      --v-theme-success: 76,175,80;
+      --v-theme-success-overlay-multiplier: 2;
+      --v-theme-warning: 251,140,0;
+      --v-theme-warning-overlay-multiplier: 2;
+      --v-theme-on-background: 255,255,255;
+      --v-theme-on-surface: 255,255,255;
+      --v-theme-on-surface-bright: 0,0,0;
+      --v-theme-on-surface-light: 255,255,255;
+      --v-theme-on-primary: 255,255,255;
+      --v-theme-on-primary-darken-1: 255,255,255;
+      --v-theme-on-secondary: 255,255,255;
+      --v-theme-on-secondary-darken-1: 255,255,255;
+      --v-theme-on-error: 255,255,255;
+      --v-theme-on-info: 255,255,255;
+      --v-theme-on-success: 255,255,255;
+      --v-theme-on-warning: 255,255,255;
+      --v-border-color: 255, 255, 255;
+      --v-border-opacity: 0.12;
+      --v-high-emphasis-opacity: 1;
+      --v-medium-emphasis-opacity: 0.7;
+      --v-disabled-opacity: 0.5;
+      --v-idle-opacity: 0.1;
+      --v-hover-opacity: 0.04;
+      --v-focus-opacity: 0.12;
+      --v-selected-opacity: 0.08;
+      --v-activated-opacity: 0.12;
+      --v-pressed-opacity: 0.16;
+      --v-dragged-opacity: 0.08;
+      --v-theme-kbd: 66, 66, 66;
+      --v-theme-on-kbd: 255, 255, 255;
+      --v-theme-code: 52, 52, 52;
+      --v-theme-on-code: 204, 204, 204;
+    }
+    .v-theme--diaryLight {
+      color-scheme: normal;
+      --v-theme-background: 250,248,248;
+      --v-theme-background-overlay-multiplier: 1;
+      --v-theme-surface: 255,255,255;
+      --v-theme-surface-overlay-multiplier: 1;
+      --v-theme-surface-bright: 255,255,255;
+      --v-theme-surface-bright-overlay-multiplier: 1;
+      --v-theme-surface-light: 238,238,238;
+      --v-theme-surface-light-overlay-multiplier: 1;
+      --v-theme-surface-variant: 66,66,66;
+      --v-theme-surface-variant-overlay-multiplier: 2;
+      --v-theme-on-surface-variant: 238,238,238;
+      --v-theme-primary: 40,75,99;
+      --v-theme-primary-overlay-multiplier: 2;
+      --v-theme-primary-darken-1: 31,85,146;
+      --v-theme-primary-darken-1-overlay-multiplier: 2;
+      --v-theme-secondary: 132,165,157;
+      --v-theme-secondary-overlay-multiplier: 1;
+      --v-theme-secondary-darken-1: 1,135,134;
+      --v-theme-secondary-darken-1-overlay-multiplier: 1;
+      --v-theme-error: 176,0,32;
+      --v-theme-error-overlay-multiplier: 2;
+      --v-theme-info: 123,151,170;
+      --v-theme-info-overlay-multiplier: 1;
+      --v-theme-success: 58,142,90;
+      --v-theme-success-overlay-multiplier: 1;
+      --v-theme-warning: 230,167,0;
+      --v-theme-warning-overlay-multiplier: 1;
+      --v-theme-accent: 242,132,130;
+      --v-theme-accent-overlay-multiplier: 1;
+      --v-theme-on-background: 43,43,43;
+      --v-theme-on-surface: 43,43,43;
+      --v-theme-on-surface-bright: 0,0,0;
+      --v-theme-on-surface-light: 0,0,0;
+      --v-theme-on-primary: 255,255,255;
+      --v-theme-on-primary-darken-1: 255,255,255;
+      --v-theme-on-secondary: 255,255,255;
+      --v-theme-on-secondary-darken-1: 255,255,255;
+      --v-theme-on-error: 255,255,255;
+      --v-theme-on-info: 255,255,255;
+      --v-theme-on-success: 255,255,255;
+      --v-theme-on-warning: 0,0,0;
+      --v-theme-on-accent: 255,255,255;
+      --v-border-color: 0, 0, 0;
+      --v-border-opacity: 0.12;
+      --v-high-emphasis-opacity: 0.87;
+      --v-medium-emphasis-opacity: 0.6;
+      --v-disabled-opacity: 0.38;
+      --v-idle-opacity: 0.04;
+      --v-hover-opacity: 0.04;
+      --v-focus-opacity: 0.12;
+      --v-selected-opacity: 0.08;
+      --v-activated-opacity: 0.12;
+      --v-pressed-opacity: 0.12;
+      --v-dragged-opacity: 0.08;
+      --v-theme-kbd: 238, 238, 238;
+      --v-theme-on-kbd: 0, 0, 0;
+      --v-theme-code: 245, 245, 245;
+      --v-theme-on-code: 0, 0, 0;
+    }
+    .bg-background {
+      --v-theme-overlay-multiplier: var(--v-theme-background-overlay-multiplier);
+      background-color: rgb(var(--v-theme-background)) !important;
+      color: rgb(var(--v-theme-on-background)) !important;
+    }
+    .bg-surface {
+      --v-theme-overlay-multiplier: var(--v-theme-surface-overlay-multiplier);
+      background-color: rgb(var(--v-theme-surface)) !important;
+      color: rgb(var(--v-theme-on-surface)) !important;
+    }
+    .bg-surface-bright {
+      --v-theme-overlay-multiplier: var(--v-theme-surface-bright-overlay-multiplier);
+      background-color: rgb(var(--v-theme-surface-bright)) !important;
+      color: rgb(var(--v-theme-on-surface-bright)) !important;
+    }
+    .bg-surface-light {
+      --v-theme-overlay-multiplier: var(--v-theme-surface-light-overlay-multiplier);
+      background-color: rgb(var(--v-theme-surface-light)) !important;
+      color: rgb(var(--v-theme-on-surface-light)) !important;
+    }
+    .bg-surface-variant {
+      --v-theme-overlay-multiplier: var(--v-theme-surface-variant-overlay-multiplier);
+      background-color: rgb(var(--v-theme-surface-variant)) !important;
+      color: rgb(var(--v-theme-on-surface-variant)) !important;
+    }
+    .bg-primary {
+      --v-theme-overlay-multiplier: var(--v-theme-primary-overlay-multiplier);
+      background-color: rgb(var(--v-theme-primary)) !important;
+      color: rgb(var(--v-theme-on-primary)) !important;
+    }
+    .bg-primary-darken-1 {
+      --v-theme-overlay-multiplier: var(--v-theme-primary-darken-1-overlay-multiplier);
+      background-color: rgb(var(--v-theme-primary-darken-1)) !important;
+      color: rgb(var(--v-theme-on-primary-darken-1)) !important;
+    }
+    .bg-secondary {
+      --v-theme-overlay-multiplier: var(--v-theme-secondary-overlay-multiplier);
+      background-color: rgb(var(--v-theme-secondary)) !important;
+      color: rgb(var(--v-theme-on-secondary)) !important;
+    }
+    .bg-secondary-darken-1 {
+      --v-theme-overlay-multiplier: var(--v-theme-secondary-darken-1-overlay-multiplier);
+      background-color: rgb(var(--v-theme-secondary-darken-1)) !important;
+      color: rgb(var(--v-theme-on-secondary-darken-1)) !important;
+    }
+    .bg-error {
+      --v-theme-overlay-multiplier: var(--v-theme-error-overlay-multiplier);
+      background-color: rgb(var(--v-theme-error)) !important;
+      color: rgb(var(--v-theme-on-error)) !important;
+    }
+    .bg-info {
+      --v-theme-overlay-multiplier: var(--v-theme-info-overlay-multiplier);
+      background-color: rgb(var(--v-theme-info)) !important;
+      color: rgb(var(--v-theme-on-info)) !important;
+    }
+    .bg-success {
+      --v-theme-overlay-multiplier: var(--v-theme-success-overlay-multiplier);
+      background-color: rgb(var(--v-theme-success)) !important;
+      color: rgb(var(--v-theme-on-success)) !important;
+    }
+    .bg-warning {
+      --v-theme-overlay-multiplier: var(--v-theme-warning-overlay-multiplier);
+      background-color: rgb(var(--v-theme-warning)) !important;
+      color: rgb(var(--v-theme-on-warning)) !important;
+    }
+    .bg-accent {
+      --v-theme-overlay-multiplier: var(--v-theme-accent-overlay-multiplier);
+      background-color: rgb(var(--v-theme-accent)) !important;
+      color: rgb(var(--v-theme-on-accent)) !important;
+    }
+    .text-background {
+      color: rgb(var(--v-theme-background)) !important;
+    }
+    .border-background {
+      --v-border-color: var(--v-theme-background);
+    }
+    .text-surface {
+      color: rgb(var(--v-theme-surface)) !important;
+    }
+    .border-surface {
+      --v-border-color: var(--v-theme-surface);
+    }
+    .text-surface-bright {
+      color: rgb(var(--v-theme-surface-bright)) !important;
+    }
+    .border-surface-bright {
+      --v-border-color: var(--v-theme-surface-bright);
+    }
+    .text-surface-light {
+      color: rgb(var(--v-theme-surface-light)) !important;
+    }
+    .border-surface-light {
+      --v-border-color: var(--v-theme-surface-light);
+    }
+    .text-surface-variant {
+      color: rgb(var(--v-theme-surface-variant)) !important;
+    }
+    .border-surface-variant {
+      --v-border-color: var(--v-theme-surface-variant);
+    }
+    .on-surface-variant {
+      color: rgb(var(--v-theme-on-surface-variant)) !important;
+    }
+    .text-primary {
+      color: rgb(var(--v-theme-primary)) !important;
+    }
+    .border-primary {
+      --v-border-color: var(--v-theme-primary);
+    }
+    .text-primary-darken-1 {
+      color: rgb(var(--v-theme-primary-darken-1)) !important;
+    }
+    .border-primary-darken-1 {
+      --v-border-color: var(--v-theme-primary-darken-1);
+    }
+    .text-secondary {
+      color: rgb(var(--v-theme-secondary)) !important;
+    }
+    .border-secondary {
+      --v-border-color: var(--v-theme-secondary);
+    }
+    .text-secondary-darken-1 {
+      color: rgb(var(--v-theme-secondary-darken-1)) !important;
+    }
+    .border-secondary-darken-1 {
+      --v-border-color: var(--v-theme-secondary-darken-1);
+    }
+    .text-error {
+      color: rgb(var(--v-theme-error)) !important;
+    }
+    .border-error {
+      --v-border-color: var(--v-theme-error);
+    }
+    .text-info {
+      color: rgb(var(--v-theme-info)) !important;
+    }
+    .border-info {
+      --v-border-color: var(--v-theme-info);
+    }
+    .text-success {
+      color: rgb(var(--v-theme-success)) !important;
+    }
+    .border-success {
+      --v-border-color: var(--v-theme-success);
+    }
+    .text-warning {
+      color: rgb(var(--v-theme-warning)) !important;
+    }
+    .border-warning {
+      --v-border-color: var(--v-theme-warning);
+    }
+    .on-background {
+      color: rgb(var(--v-theme-on-background)) !important;
+    }
+    .on-surface {
+      color: rgb(var(--v-theme-on-surface)) !important;
+    }
+    .on-surface-bright {
+      color: rgb(var(--v-theme-on-surface-bright)) !important;
+    }
+    .on-surface-light {
+      color: rgb(var(--v-theme-on-surface-light)) !important;
+    }
+    .on-primary {
+      color: rgb(var(--v-theme-on-primary)) !important;
+    }
+    .on-primary-darken-1 {
+      color: rgb(var(--v-theme-on-primary-darken-1)) !important;
+    }
+    .on-secondary {
+      color: rgb(var(--v-theme-on-secondary)) !important;
+    }
+    .on-secondary-darken-1 {
+      color: rgb(var(--v-theme-on-secondary-darken-1)) !important;
+    }
+    .on-error {
+      color: rgb(var(--v-theme-on-error)) !important;
+    }
+    .on-info {
+      color: rgb(var(--v-theme-on-info)) !important;
+    }
+    .on-success {
+      color: rgb(var(--v-theme-on-success)) !important;
+    }
+    .on-warning {
+      color: rgb(var(--v-theme-on-warning)) !important;
+    }
+    .text-accent {
+      color: rgb(var(--v-theme-accent)) !important;
+    }
+    .border-accent {
+      --v-border-color: var(--v-theme-accent);
+    }
+    .on-accent {
+      color: rgb(var(--v-theme-on-accent)) !important;
+    }
+</style></head>
+  <body cz-shortcut-listen="true">
+    <div id="app" data-v-app=""><div class="v-application v-theme--diaryLight v-layout v-layout--full-height v-locale--is-ltr"><div class="v-application__wrap"><header class="v-toolbar v-toolbar--collapse-start v-toolbar--flat v-toolbar--density-default bg-surface v-toolbar--border v-theme--diaryLight v-locale--is-ltr v-app-bar" style="top: 0px; z-index: 1004; transform: translateY(0px); position: fixed; left: 0px; width: calc(100% + 0px);"><!----><div class="v-toolbar__content" style="height: 64px;"><!----><!----><div class="v-toolbar-title flex-grow-0 mr-6 v-app-bar-title"><div class="v-toolbar-title__placeholder"><!----><a href="https://solid-adventure-92vj45m.pages.github.io/" class="text-decoration-none text-inherit font-weight-bold"> 📋 Change Delegation </a></div></div><div class="d-none d-md-flex ga-2"><a href="https://solid-adventure-92vj45m.pages.github.io/" class="v-btn v-theme--diaryLight v-btn--density-default rounded-pill v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-home-outline mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator="">Home</span><!----><!----></a><a href="https://solid-adventure-92vj45m.pages.github.io/features" class="v-btn v-theme--diaryLight v-btn--density-default rounded-pill v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-rocket-launch-outline mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator="">Feature Development</span><!----><!----></a><a href="https://solid-adventure-92vj45m.pages.github.io/experiments" class="v-btn v-theme--diaryLight v-btn--density-default rounded-pill v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-flask-outline mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator="">Learnings / Experiments</span><!----><!----></a><a href="https://solid-adventure-92vj45m.pages.github.io/presentations" class="v-btn v-theme--diaryLight v-btn--density-default rounded-pill v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-presentation mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator="">Presentations</span><!----><!----></a><button type="button" class="v-btn v-theme--diaryLight v-btn--density-default rounded-pill v-btn--size-default v-btn--variant-text" aria-haspopup="menu" aria-expanded="false" aria-controls="v-menu-v-5" aria-owns="v-menu-v-5"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-target mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator=""> Change Delegation Feature </span><span class="v-btn__append"><i class="mdi-menu-down mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><!----></button><!----></div><div class="v-spacer"></div><button type="button" class="v-btn v-btn--icon v-theme--diaryLight v-btn--density-default rounded-lg v-btn--size-default v-btn--variant-text d-md-none" aria-haspopup="menu" aria-expanded="false" aria-controls="v-menu-v-7" aria-owns="v-menu-v-7"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><!----><span class="v-btn__content" data-no-activator=""><i class="mdi-menu mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><!----><!----></button><!----><!----></div><!----></header><main class="v-main" style="--v-layout-left: 0px; --v-layout-right: 0px; --v-layout-top: 64px; --v-layout-bottom: 0px;"><div class="v-container v-locale--is-ltr py-6" style="max-width: 1100px;"><div data-v-54f81c17=""><a data-v-54f81c17="" href="https://solid-adventure-92vj45m.pages.github.io/experiments" class="v-btn v-theme--diaryLight text-primary v-btn--density-default rounded-lg v-btn--size-small v-btn--variant-text mb-4"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span><span class="v-btn__prepend"><i class="mdi-arrow-left mdi v-icon notranslate v-theme--diaryLight v-icon--size-default" aria-hidden="true"></i></span><span class="v-btn__content" data-no-activator=""> Back to experiments </span><!----><!----></a><div data-v-54f81c17="" class="mb-6"><div data-v-54f81c17="" class="d-flex flex-wrap align-center ga-3 mb-2"><h1 data-v-54f81c17="" class="text-h4 font-weight-bold mb-0">LLM Usage Foundation</h1><span data-v-54f81c17="" class="v-chip v-theme--diaryLight text-success v-chip--density-default v-chip--size-default v-chip--variant-tonal" draggable="false"><!----><span class="v-chip__underlay"></span><!----><!----><div class="v-chip__content" data-no-activator="">finished</div><!----><!----></span></div><div data-v-54f81c17="" class="text-body-2 text-medium-emphasis">May 6, 2025</div></div><article data-v-54f81c17="" class="mdx-body mb-6"><h2>Problem</h2>
+<p>Using LLMs is expensive. Not "API call" expensive, but at the rates a serious agent burns through tokens, the bill matches a human worker on a lot of tasks. <a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">METR's mid-2025 study</a> actually measured experienced open-source developers and found they were <em>slower</em> with AI tools than without, even though they thought the opposite. Practitioner write-ups go further on the cost angle: <a href="https://www.cyfrin.io/blog/expensive-and-slow-for-small-changes-why-ai-coding-agents-can-be-overkill">Cyfrin's breakdown</a> shows agents costing an order of magnitude more than a human edit for small changes.</p>
+<p>That doesn't mean we stop using them. It means we have to be deliberate about it. Where is an LLM the right tool, where is it overkill, where does it spiral into burning 50× the tokens it actually needed. We can't answer those questions by feeling. We need data.</p>
+<p>There's a second angle, more speculative. If we record what the LLM does, an LLM can read the recordings. And if an LLM can read the recordings, we can build something that watches its own usage and improves its own setup over time. Self-tuning agents.</p>
+<h2>Assumptions</h2>
+<ul>
+<li>We don't need a fancy analysis pipeline today. If we just store every interaction in a structured form, we can ask any question we want of it later, including questions we haven't thought of yet. Storage is the cheap part; re-creating the data after the fact is the impossible part.</li>
+<li>SAP-wide telemetry will eventually exist, but GDPR and personal-data rules will make any company-level pipeline coarse and slow. Every individual storing their own usage on their own machine sidesteps most of that. The data lives where it was generated, and the person who generated it owns it.</li>
+</ul>
+<h2>Main learnings</h2>
+<ul>
+<li>Storing per-person usage is cheap. Disk is free at the volumes we're talking about.</li>
+<li>For developers it's basically free of friction: they already have a terminal, they already run Docker, the telemetry just shows up.</li>
+<li>Non-devs (UX, PMs) are harder. The tooling works fine, but the mental model doesn't come for free. Spans, traces, token counts: all unfamiliar vocabulary, and most people don't want to learn it just to see how much their week cost.</li>
+<li>A small dev team can build a packaged, opt-in version of this for the whole company.</li>
+<li>Raw metrics (tokens, cost) are necessary but not sufficient. The real diagnostic value comes when the <em>content</em> of the interaction is stored alongside the metrics, in the same observability plane. When something costs too much, you need to read what was asked, not just how many tokens it consumed. The OTel GenAI semantic conventions provide the standard schema for this, and Tempo stores it.</li>
+</ul>
+<h2>Organizational impact</h2>
+<p>See <a href="https://solid-adventure-92vj45m.pages.github.io/experiments/secure-development#organizational-impact">Secure Development</a>. Same argument applies. AI usage is growing across the company, and the org needs a default-on way to see what's happening before it has to debug something blind.</p>
+<h2>Approach</h2>
+<p>In normal software, observability is a solved problem. <a href="https://opentelemetry.io/">OpenTelemetry</a> is the de-facto standard for traces, metrics, and logs.</p>
+<p>In the last year, OpenTelemetry has been adding a vocabulary specifically for LLM and agent telemetry: the <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">GenAI semantic conventions</a>. Standard attribute names like <code>gen_ai.system</code>, <code>gen_ai.request.model</code>, <code>gen_ai.usage.input_tokens</code> and <code>output_tokens</code>, plus events for capturing the full prompt and completion content. Following the spec means anything in the OTel ecosystem (Grafana, Tempo, Phoenix, Langfuse, Honeycomb) can read our data without translation.</p>
+<p>The tracing layer is the single source of truth for both structure and content. A prompt, the tool calls it triggered, the child sessions it spawned, and the cost it generated all live in one trace. TraceQL covers both structured search (by attribute value) and time-ordered browsing (by span timestamp). One backend, one query language, one place to look.</p>
+<h2>What we built</h2>
+<h3>The base: claude-code-monitoring-guide</h3>
+<p>We use Anthropic's <a href="https://github.com/anthropics/claude-code-monitoring-guide">claude-code-monitoring-guide</a> as the receiving end. It's a Docker Compose stack: an OpenTelemetry Collector, Prometheus, and Grafana, pre-wired with dashboards for Claude Code's metrics.</p>
+<pre><code class="hljs language-bash">git <span class="hljs-built_in">clone</span> https://github.com/anthropics/claude-code-monitoring-guide.git
+<span class="hljs-built_in">cd</span> claude-code-monitoring-guide
+docker compose up -d
+</code></pre>
+<p>Grafana on <code>http://localhost:3000</code> (admin/admin).</p>
+<p>Then we tell Claude Code to send telemetry. On the host, in <code>~/.claude/settings.json</code>:</p>
+<pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"env"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"CLAUDE_CODE_ENABLE_TELEMETRY"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"1"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"OTEL_METRICS_EXPORTER"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"otlp"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"OTEL_EXPORTER_OTLP_PROTOCOL"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"grpc"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"OTEL_EXPORTER_OTLP_ENDPOINT"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"http://localhost:4317"</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p>For sandboxed runs, the same settings go into the sandbox kit, but with a small twist: the sandbox uses <code>http/protobuf</code> on port 4318, not gRPC on 4317. The agent process exits before a gRPC batch flushes and the traces get lost. Took us a while to figure that one out.</p>
+<pre><code class="hljs language-yaml"><span class="hljs-attr">environment:</span>
+  <span class="hljs-attr">variables:</span>
+    <span class="hljs-attr">CLAUDE_CODE_ENABLE_TELEMETRY:</span> <span class="hljs-string">"1"</span>
+    <span class="hljs-attr">OTEL_METRICS_EXPORTER:</span> <span class="hljs-string">"otlp"</span>
+    <span class="hljs-attr">OTEL_EXPORTER_OTLP_PROTOCOL:</span> <span class="hljs-string">"http/protobuf"</span>
+    <span class="hljs-attr">OTEL_EXPORTER_OTLP_ENDPOINT:</span> <span class="hljs-string">"http://host.docker.internal:4318"</span>
+</code></pre>
+<h3>Custom Grafana dashboards</h3>
+<p>The pre-wired dashboards cover the basics. They don't cover the questions we actually had: "how much did this week's deep-research sessions cost?", "what's my cost per project, broken down by model?". Those needed custom panels.</p>
+<p>We can just ask Claude Code to build the dashboard. The monitoring stack auto-loads dashboard JSON from its provisioning folder, so the agent writes the file straight there. No copy-pasting JSON into the Grafana UI. Most of our dashboards started as a one-line prompt.</p>
+<img src="./llm-usage-foundation_files/dashboard.png" alt="Grafana dashboard with token usage by project, total prompts/turns/tool calls overview, token consumption rate, tokens by model, tool call distribution and error rates.">
+<h3>Per-project metrics and tracing</h3>
+<p>Claude Code respects <a href="https://code.claude.com/docs/en/monitoring-usage"><code>OTEL_RESOURCE_ATTRIBUTES</code></a> and stamps every span and metric with whatever you put in there. Set it per project and you get a <code>project=&lt;name&gt;</code> label everywhere the data shows up.</p>
+<p>The simplest setup: a per-project <code>.env</code> or shell hook that exports something like</p>
+<pre><code class="hljs language-bash"><span class="hljs-built_in">export</span> OTEL_RESOURCE_ATTRIBUTES=<span class="hljs-string">"project=change-delegation,team=editor"</span>
+</code></pre>
+<p>and suddenly Grafana can answer "how much did the change-delegation work cost this month" without a single SQL query.</p>
+<p>pi has the same hook through the <a href="https://github.com/mprokopov/pi-otel-telemetry">pi-otel-telemetry extension</a>. It forwards the same OTEL env vars, so the same labels apply across both agents.</p>
+<h3>Tracing prompts and responses</h3>
+<p>Claude Code's built-in telemetry is mostly metrics: tokens, cost, tool-call counts. The actual prompts and the actual responses don't get traced out of the box. If you want to see <em>what</em> the agent said, you can't, at least not without writing code.</p>
+<p>pi is a different story. The <a href="https://github.com/mprokopov/pi-otel-telemetry">pi-otel-telemetry extension</a> emits full OTel GenAI spans for every turn: prompt event, model attributes, token usage, completion event. Following the <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">GenAI semantic conventions</a> means the spans land in Grafana Tempo, Langfuse, or Phoenix without translation.</p>
+<img src="./llm-usage-foundation_files/trace.png" alt="Tempo trace view of a pi-coding-agent session: agent.prompt and agent.turn spans with nested tool.bash spans, including the full input and output values and resource attributes for project, user and session.">
+<h3>Prompt content in trace data</h3>
+<p>The GenAI semantic conventions define where prompt and completion content belongs inside a trace. <code>gen_ai.input.messages</code> carries the full user prompt as a JSON-encoded span attribute. <code>gen_ai.content.prompt</code> and <code>gen_ai.content.completion</code> are Span Events attached to the inference span, holding the raw text alongside metadata like token count and finish reason.</p>
+<p>Span Events are the correct vehicle for this. They live inside the trace, inherit its context (trace ID, parent span), and are stored together with the span in the tracing backend. "Find the prompt that caused this expensive tool chain" becomes a single TraceQL query, not a cross-system correlation exercise.</p>
+<p>The spec marks content capture as opt-in, because prompts can be large and contain sensitive data. For personal or team usage on a local machine this is a non-issue. For company-wide rollout, the same mechanism supports external storage references instead of inline content, so you can still link to the content without storing it in the trace directly.</p>
+<p>TraceQL makes prompt content searchable without separate infrastructure. A query like <code>{ span.gen_ai.input.messages =~ ".*keyword.*" }</code> finds every trace where the user asked about that keyword. Combined with the causal structure already in the trace (which tool spans are children of which prompt span), you get both "what was asked" and "what happened as a result" in one view.</p>
+<h3>Persistent volumes and retention</h3>
+<p>The monitoring stack runs in Docker. Named volumes survive <code>docker compose down</code>, but not a <code>docker volume prune</code> or accidental removal. Without explicit attention to persistence, a 30-day retention policy means nothing if the underlying storage gets wiped on day 3.</p>
+<p>All services should run with <code>restart: unless-stopped</code> so the stack comes back after a Docker or OS restart without manual intervention. This is the difference between telemetry that's always there and telemetry that requires someone to remember to start it.</p>
+<p>Retention must be explicitly configured and matched to the expected analysis window. For cost analysis by week or month you need at minimum 30 days of data. Prometheus defaults to 15 days; Tempo defaults vary by version. Both need to be set consciously.</p>
+<p>Agent sessions are bursty: metrics get emitted for 20 minutes while a session is active, then nothing for hours. Without staleness-safe recording rules (using <code>max_over_time</code> windows wider than the quiet gap), aggregated metrics like total cost or cache hit ratio disappear between sessions. The recording rules layer needs to be designed around this burst pattern, not the steady-stream pattern that Prometheus was built for.</p></article><!----></div></div></main></div></div></div>
+  
+
+<div class="v-overlay-container"></div></body><script src="chrome-extension://lgmpcpglpngdoalbgeoldeajfclnhafa/inpage.js"></script></html>

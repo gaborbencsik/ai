@@ -1,0 +1,19 @@
+# Agent sessions are bursty: metrics flow for ~20 min while a session is active,
+# then nothing for hours. Plain rate()/sum() over such gaps yields NaN between
+# sessions. These rules use max_over_time windows wider than the quiet gap so
+# aggregates (cost, tokens) stay visible between sessions.
+groups:
+  - name: claude-code-usage
+    interval: 30s
+    rules:
+      # Cumulative cost seen over a rolling 24h window, per project.
+      - record: agent:cost_usd:max24h
+        expr: max_over_time(claude_code_cost_usage_USD_total[24h])
+
+      # Cumulative tokens over a rolling 24h window, per project and model.
+      - record: agent:tokens:max24h
+        expr: max_over_time(claude_code_token_usage_tokens_total[24h])
+
+      # Total cost across all projects (staleness-safe).
+      - record: agent:cost_usd:total24h
+        expr: sum(max_over_time(claude_code_cost_usage_USD_total[24h]))

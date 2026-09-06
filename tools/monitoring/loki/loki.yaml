@@ -1,0 +1,43 @@
+# Loki single-binary config for local agent-prompt logs.
+# Receives OTLP from the OTel Collector at /otlp and stores log records
+# (Claude Code emits user prompts / completions as logs when
+# OTEL_LOGS_EXPORTER=otlp). Content is queryable via LogQL in Grafana.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # Allow OTLP resource/log attributes to be kept as structured metadata so
+  # prompt fields stay queryable without exploding label cardinality.
+  allow_structured_metadata: true
+  # Retention matched to the cost-analysis window (>= 30 days).
+  retention_period: 720h
+
+compactor:
+  working_directory: /loki/compactor
+  delete_request_store: filesystem
+  retention_enabled: true
