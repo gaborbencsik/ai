@@ -10,7 +10,19 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXT_DIR="${HERE}"
 PROFILE_DIR="${OMP_ANNOTATOR_PROFILE:-$HOME/Library/Application Support/omp-annotator-chrome}"
-CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME_BIN="${OMP_ANNOTATOR_CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+if [[ ! -x "${CHROME_BIN}" ]]; then
+  for CANDIDATE in \
+    "/Applications/Chromium.app/Contents/MacOS/Chromium" \
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; do
+    if [[ -x "${CANDIDATE}" ]]; then
+      CHROME_BIN="${CANDIDATE}"
+      break
+    fi
+  done
+fi
 
 if [[ ! -x "${CHROME_BIN}" ]]; then
   echo "Google Chrome not found at ${CHROME_BIN}" >&2

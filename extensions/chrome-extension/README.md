@@ -9,8 +9,10 @@ streams reviewer notes back into the OMP session that ran `/listen`.
 1. Start OMP, run `/listen` in the session where you want annotations to
    land. This starts a Bun.serve bridge on `http://127.0.0.1:4747` (falls
    back through `4748..4756` if that port is busy) and prints the exact URL.
-2. Chrome: `chrome://extensions` -> Developer mode -> **Load unpacked** ->
-   pick the `chrome-extension/` directory of this repo.
+2. Chromium-based browser (Chrome/Brave/Edge): `chrome://extensions` -> Developer mode -> **Load unpacked** ->
+   pick the `chrome-extension/` directory of this repo. Or run `./launch-chrome.sh`
+   which auto-detects an installed Chromium-family browser (override with
+   `OMP_ANNOTATOR_CHROME=/path/to/binary`).
 3. Click the OMP Annotator toolbar icon on any HTTP(S) page. Popup shows
    the bridge state. If `bridge offline`, adjust the host/port to match
    the URL that `/listen` printed and hit Save + Probe. When the pill turns

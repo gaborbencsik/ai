@@ -5,3 +5,16 @@
 # Built kit dir: sbx-spec.yaml with the real ANTHROPIC_API_KEY injected by
 # `make kit-build`. Contains a secret — never commit.
 /.kit/
+
+# Runtime dependencies — reinstall with `npm install` / `npm ci`.
+node_modules/
+
+# Bundled build output: regenerate with `npm run build` (vscode-extension).
+# Tracked copies existed by mistake; `git rm -r --cached` cleans them up.
+extensions/vscode-extension/dist/
+
+# Packaged release artifacts (vsix) — reproducible via `npm run package`.
+extensions/vscode-extension/*.vsix
+
+# Machine-local OMP extension links (absolute-path symlinks, per-machine).
+.omp/
