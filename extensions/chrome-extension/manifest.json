@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "OMP Annotator",
+  "version": "0.2.0",
+  "description": "Annotate any HTML page on demand and stream the notes back into an OMP session running /listen. Element + selection modes, in-page sidebar, WebSocket-driven reload/highlight.",
+  "action": {
+    "default_title": "OMP Annotator",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content.js", "content.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,346 @@
+/* OMP Annotator content styles — all rules scoped under #omp-annot-*
+   and use fixed positioning so nothing here shifts the host page layout. */
+
+.omp-annot-hover-outline {
+  outline: 2px dashed rgba(59, 130, 246, 0.75) !important;
+  outline-offset: 1px !important;
+  cursor: crosshair !important;
+}
+
+.omp-annot-selected-outline {
+  outline: 2px solid rgba(249, 115, 22, 0.95) !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15) !important;
+  transition: outline-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* --- overlay frames ----------------------------------------------- */
+/* Belt-and-suspenders indicator: many host stylesheets use `outline:
+ * none !important` on links / buttons / focused elements and would win
+ * even against ours. The overlays are position:fixed divs we paint on
+ * top of the target, so the highlight is guaranteed to show regardless
+ * of host CSS. `pointer-events: none` keeps them click-through so
+ * clicking through the overlay still hits the underlying element. */
+#omp-annot-hover-overlay,
+#omp-annot-sel-overlay {
+  all: initial;
+  position: fixed;
+  pointer-events: none;
+  z-index: 2147483643;
+  box-sizing: border-box;
+  transition: top 0.05s linear, left 0.05s linear, width 0.05s linear, height 0.05s linear;
+}
+#omp-annot-hover-overlay {
+  border: 2px dashed rgba(59, 130, 246, 0.85);
+  background: rgba(59, 130, 246, 0.06);
+}
+#omp-annot-sel-overlay {
+  border: 2px solid rgba(249, 115, 22, 0.95);
+  background: rgba(249, 115, 22, 0.08);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18);
+}
+
+/* --- floating badge (bottom-left) --------------------------------- */
+#omp-annot-badge {
+  all: initial;
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147483644;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  font: 500 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.32);
+  user-select: none;
+}
+#omp-annot-badge:hover { background: rgba(15, 23, 42, 1); }
+/* Armed state: the badge glows orange and the whole document gets a
+   crosshair cursor so the user knows the next click will be captured. */
+#omp-annot-badge.omp-annot-badge--armed {
+  background: #f97316;
+  color: #0f172a;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.35), 0 8px 20px rgba(249, 115, 22, 0.45);
+}
+html.omp-annot-armed,
+html.omp-annot-armed body { cursor: crosshair !important; }
+.omp-annot-badge__arm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  padding: 0 2px;
+  font: 700 13px/1 inherit;
+  cursor: pointer;
+}
+.omp-annot-badge__count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 11px/1 inherit;
+}
+#omp-annot-badge.omp-annot-badge--has-queue .omp-annot-badge__count {
+  background: #f97316;
+  color: #0f172a;
+}
+
+
+/* --- comment popover ---------------------------------------------- */
+#omp-annot-selpop {
+  all: initial;
+  position: absolute;
+  z-index: 2147483646;
+  width: 320px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+  color: #0f172a;
+  font: 400 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+#omp-annot-selpop[data-show="1"] { opacity: 1; pointer-events: auto; }
+.omp-annot-sp__quote {
+  font: italic 12px/1.4 inherit;
+  color: #64748b;
+  border-left: 3px solid #e2e8f0;
+  padding: 2px 0 2px 8px;
+  margin-bottom: 8px;
+  max-height: 60px;
+  overflow: hidden;
+}
+#omp-annot-selpop textarea {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  resize: vertical;
+}
+#omp-annot-selpop textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+.omp-annot-sp__actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.omp-annot-sp__actions button {
+  all: unset;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 500 12px/1 inherit;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.omp-annot-sp__actions button:hover { background: #e2e8f0; }
+.omp-annot-sp__actions .omp-annot-sp__save { background: #f97316; color: #fff; }
+.omp-annot-sp__actions .omp-annot-sp__save:hover { background: #ea580c; }
+
+/* --- in-page sidebar ---------------------------------------------- */
+#omp-annot-sidebar {
+  all: initial;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 360px;
+  z-index: 2147483643;
+  background: #fff;
+  color: #0f172a;
+  font: 400 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.2);
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+#omp-annot-sidebar[data-open="1"] { transform: translateX(0); }
+.omp-annot-sb__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #0f172a;
+  color: #f8fafc;
+}
+.omp-annot-sb__title { font-weight: 700; font-size: 14px; }
+.omp-annot-sb__sub   { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.omp-annot-sb__close {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 18px;
+  color: #94a3b8;
+}
+.omp-annot-sb__close:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
+.omp-annot-sb__hint {
+  padding: 10px 14px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 11px;
+  border-bottom: 1px solid #fed7aa;
+}
+.omp-annot-sb__list {
+  all: unset;
+  display: block;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px;
+  list-style: none;
+}
+.omp-annot-sb__list li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 6px;
+  background: #fff;
+  cursor: default;
+}
+.omp-annot-sb__list li:hover { border-color: #f97316; background: #fff7ed; }
+.omp-annot-sb__list .omp-annot-sb__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.omp-annot-sb__kind { font-size: 16px; }
+.omp-annot-sb__body { flex: 1 1 auto; min-width: 0; }
+.omp-annot-sb__note {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.omp-annot-sb__path {
+  font: 400 10px/1.3 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.omp-annot-sb__del {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+.omp-annot-sb__del:hover { background: #fecaca; color: #7f1d1d; }
+.omp-annot-sb__empty { color: #94a3b8; font-style: italic; padding: 12px; text-align: center; }
+.omp-annot-sb__footer {
+  padding: 10px 12px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.omp-annot-sb__msg {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+.omp-annot-sb__msg:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+.omp-annot-sb__footer .omp-annot-sb__row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.omp-annot-sb__btn {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font: 500 12px/1 inherit;
+}
+.omp-annot-sb__btn--ghost   { color: #64748b; }
+.omp-annot-sb__btn--ghost:hover { background: #e2e8f0; }
+.omp-annot-sb__btn--primary { background: #f97316; color: #fff; }
+.omp-annot-sb__btn--primary:hover { background: #ea580c; }
+.omp-annot-sb__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- reload pill (top-center) ------------------------------------ */
+#omp-annot-reload {
+  all: initial;
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 10px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: 500 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.35);
+}
+.omp-annot-reload__spin { display: inline-block; animation: omp-annot-spin 1.2s linear infinite; font-size: 14px; }
+@keyframes omp-annot-spin { to { transform: rotate(360deg); } }
+.omp-annot-reload__text b { color: #fbbf24; margin-right: 4px; font-weight: 700; }
+.omp-annot-reload__reason { color: #cbd5e1; }
+.omp-annot-reload__close {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #94a3b8;
+  font-size: 14px;
+  margin-left: 4px;
+}
+.omp-annot-reload__close:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
+
+/* --- toast -------------------------------------------------------- */
+#omp-annot-toast {
+  all: initial;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  font: 500 12px/1.3 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  max-width: 480px;
+  text-align: center;
+}

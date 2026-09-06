@@ -1,0 +1,166 @@
+{
+  "name": "omp-markdown-annotator",
+  "displayName": "OMP Annotator",
+  "description": "Annotate Markdown, PNG images, and PlantUML diagrams; send the notes to an OMP agent chat.",
+  "version": "0.2.0",
+  "publisher": "local",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:ompMarkdownAnnotator.openPreview",
+    "onCommand:ompMarkdownAnnotator.openImagePreview",
+    "onCommand:ompMarkdownAnnotator.openPumlPreview",
+    "onCustomEditor:ompMarkdownAnnotator.preview",
+    "onCustomEditor:ompMarkdownAnnotator.imagePreview",
+    "onCustomEditor:ompMarkdownAnnotator.pumlPreview"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ompMarkdownAnnotator.openPreview",
+        "title": "OMP: Open Annotatable Markdown Preview",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "ompMarkdownAnnotator.openImagePreview",
+        "title": "OMP: Open Annotatable Image Preview",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "ompMarkdownAnnotator.openPumlPreview",
+        "title": "OMP: Open Annotatable PlantUML Preview",
+        "icon": "$(comment-discussion)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "ompMarkdownAnnotator.openPreview",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        },
+        {
+          "command": "ompMarkdownAnnotator.openImagePreview",
+          "when": "resourceExtname =~ /\\.(png|jpe?g|gif|webp|bmp)$/i",
+          "group": "navigation"
+        },
+        {
+          "command": "ompMarkdownAnnotator.openPumlPreview",
+          "when": "resourceExtname =~ /\\.(puml|plantuml|iuml|wsd)$/i",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "ompMarkdownAnnotator.openPreview",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        },
+        {
+          "command": "ompMarkdownAnnotator.openPumlPreview",
+          "when": "resourceExtname =~ /\\.(puml|plantuml|iuml|wsd)$/i",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "ompMarkdownAnnotator.openImagePreview",
+          "when": "resourceExtname =~ /\\.(png|jpe?g|gif|webp|bmp)$/i",
+          "group": "navigation"
+        },
+        {
+          "command": "ompMarkdownAnnotator.openPumlPreview",
+          "when": "resourceExtname =~ /\\.(puml|plantuml|iuml|wsd)$/i",
+          "group": "navigation"
+        }
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "ompMarkdownAnnotator.preview",
+        "displayName": "OMP Annotatable Markdown Preview",
+        "selector": [
+          { "filenamePattern": "*.md" },
+          { "filenamePattern": "*.markdown" },
+          { "filenamePattern": "*.mdown" },
+          { "filenamePattern": "*.mkd" }
+        ],
+        "priority": "option"
+      },
+      {
+        "viewType": "ompMarkdownAnnotator.imagePreview",
+        "displayName": "OMP Annotatable Image Preview",
+        "selector": [
+          { "filenamePattern": "*.png" },
+          { "filenamePattern": "*.jpg" },
+          { "filenamePattern": "*.jpeg" },
+          { "filenamePattern": "*.gif" },
+          { "filenamePattern": "*.webp" },
+          { "filenamePattern": "*.bmp" }
+        ],
+        "priority": "option"
+      },
+      {
+        "viewType": "ompMarkdownAnnotator.pumlPreview",
+        "displayName": "OMP Annotatable PlantUML Preview",
+        "selector": [
+          { "filenamePattern": "*.puml" },
+          { "filenamePattern": "*.plantuml" },
+          { "filenamePattern": "*.iuml" },
+          { "filenamePattern": "*.wsd" }
+        ],
+        "priority": "option"
+      }
+    ],
+    "configuration": {
+      "title": "OMP Annotator",
+      "properties": {
+        "ompMarkdownAnnotator.bridgeHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host of the OMP annotator bridge."
+        },
+        "ompMarkdownAnnotator.bridgePort": {
+          "type": "number",
+          "default": 4747,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port printed by the OMP /listen command."
+        },
+        "ompMarkdownAnnotator.plantumlServerUrl": {
+          "type": "string",
+          "default": "https://www.plantuml.com/plantuml",
+          "description": "PlantUML rendering server (used unless plantumlJarPath is set)."
+        },
+        "ompMarkdownAnnotator.plantumlJarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to a local plantuml.jar. When set, renders offline via `java -jar` and overrides plantumlServerUrl."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild extension.js --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "check": "node --check extension.js && node --check media/annotator-core.js && node --check media/main.js && node --check media/image.js",
+    "package": "npm run build && npx @vscode/vsce package --allow-missing-repository"
+  },
+  "files": [
+    "dist/**",
+    "media/**",
+    "README.md"
+  ]
+}

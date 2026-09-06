@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OMP Annotator</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="popup__header">
+      <h1>OMP Annotator</h1>
+      <span id="status" class="status status--unknown">checking…</span>
+    </header>
+
+    <section class="popup__section" id="bridgeSection">
+      <label>
+        <span class="popup__label">Bridge host</span>
+        <input id="host" type="text" value="127.0.0.1" spellcheck="false" />
+      </label>
+      <label>
+        <span class="popup__label">Port</span>
+        <input id="port" type="number" value="4747" min="1" max="65535" />
+      </label>
+      <div class="popup__row">
+        <button id="probe" class="btn btn--secondary">Probe</button>
+        <button id="save" class="btn btn--secondary">Save</button>
+      </div>
+      <div id="probeInfo" class="popup__info">Run <code>/listen</code> in your OMP session first.</div>
+    </section>
+
+    <section class="popup__section" id="activateSection">
+      <button id="activate" class="btn btn--primary">Activate on this tab</button>
+      <div class="popup__info">Click, then select text or click any element on the page.</div>
+    </section>
+
+    <section class="popup__section" id="liveSection" hidden>
+      <div class="popup__page">
+        <div id="pageTitle" class="popup__page-title"></div>
+        <div id="pageUrl" class="popup__page-url"></div>
+      </div>
+      <button id="openSidebar" class="btn btn--secondary">Open in-page panel</button>
+      <div class="popup__info">Queue: <span id="queueCount">0</span> annotation(s).</div>
+    </section>
+
+    <footer class="popup__footer">
+      <span>OMP session command:</span>
+      <code>/listen</code>
+    </footer>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

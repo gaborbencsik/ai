@@ -1,0 +1,12 @@
+body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+#toolbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--vscode-editorWidget-background); border-bottom: 1px solid var(--vscode-panel-border); }
+#toolbar button[data-tool] { padding: 4px 10px; color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); border: 1px solid var(--vscode-panel-border); border-radius: 4px; }
+#toolbar button[data-tool].active { color: var(--vscode-button-foreground); background: var(--vscode-button-background); border-color: transparent; }
+#toolbar .toolbar-hint { margin-left: auto; color: var(--vscode-descriptionForeground); font-size: 11px; }
+#stage { flex: 1 1 auto; overflow: auto; background: var(--vscode-editor-background); display: flex; align-items: flex-start; justify-content: center; padding: 24px; }
+#canvas-wrap { position: relative; display: inline-block; max-width: 100%; box-shadow: 0 8px 24px #0004; background: repeating-conic-gradient(#00000010 0% 25%, transparent 0% 50%) 0 0 / 20px 20px; }
+#image { display: block; max-width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+#overlay { position: absolute; inset: 0; cursor: crosshair; }
+body:not(.armed) #overlay { pointer-events: none; }
+body.armed #overlay { cursor: crosshair; }
+
