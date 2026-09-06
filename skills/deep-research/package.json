@@ -1,0 +1,39 @@
+{
+  "name": "@your-org/omp-deep-research",
+  "version": "1.0.0",
+  "description": "Enterprise deep research extension for OMP with multi-phase orchestration and source validation",
+  "main": "index.ts",
+  "types": "index.ts",
+  "keywords": [
+    "omp",
+    "oh-my-pi",
+    "research",
+    "deep-research",
+    "web-search",
+    "orchestration"
+  ],
+  "author": "Your Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/omp-deep-research.git"
+  },
+  "omp": {
+    "extensions": ["./index.ts"],
+    "skills": ["./SKILL.md"]
+  },
+  "pi": {
+    "extensions": ["./index.ts"],
+    "skills": ["./SKILL.md"]
+  },
+  "peerDependencies": {
+    "@oh-my-pi/pi-coding-agent": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

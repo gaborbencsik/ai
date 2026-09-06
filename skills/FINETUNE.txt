@@ -1,0 +1,5 @@
+Fine-tune szükséges:
+
+- repository-structure
+- project-vocabulary
+- think
