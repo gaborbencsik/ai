@@ -6,9 +6,12 @@ metadata:
   default-endpoint: http://host.docker.internal:8888
 ---
 
-# SearXNG Web Search
-
 Search the web and read pages. Uses `$SEARXNG_URL` (default `http://host.docker.internal:8888`).
+
+> **Engine egress note**: several engines (duckduckgo, brave, mojeek) are routed
+> through a Tor SOCKS5 container (`searxng-tor`) to dodge IP bans. If those engines
+> appear `Suspended` or missing from results, check the tor container first:
+> `docker ps | grep searxng-tor` (see `references/advanced.md` → Troubleshooting).
 
 ## Search
 

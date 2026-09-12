@@ -3,11 +3,59 @@ services:
     image: searxng/searxng:latest
     container_name: searxng
     ports:
-      - "8888:8080"
+      - "127.0.0.1:8888:8080"
     volumes:
       - ./searxng:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://localhost:8888/
+      - SEARXNG_VALKEY_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+      tor:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Tor SOCKS5: egress proxy for engines that get IP-banned from the
+  # residential IP (duckduckgo, brave, mojeek — wired via settings.yml
+  # outgoing.networks.tor). google stays on the direct network (fast path).
+  # alpine + tor package (no maintained official tor image); apk cache is
+  # baked into a volume so restarts don't re-download.
+  tor:
+    image: alpine:3.20
+    container_name: searxng-tor
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["apk add --no-cache tor >/dev/null 2>&1; exec tor -f /etc/tor/torrc"]
+    volumes:
+      - ./searxng/tor/torrc:/etc/tor/torrc:ro
+      - tor-data:/var/lib/tor
+    ports:
+      - "127.0.0.1:9050:9050"
+    healthcheck:
+      # SOCKS port accepting == usable for SearXNG. Bootstrap to 100% takes
+      # ~10-30s; start_period covers it. SearXNG's own boot-time Tor check
+      # (check_network=True) additionally verifies the exit works.
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9050"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+  # Redis: required for the SearXNG limiter (incoming bot detection /
+  # rate limiting). NOTE: engine suspension state is NOT stored here —
+  # it lives in an in-memory dict (SUSPENDED_STATUS) and resets on restart.
+  redis:
+    image: redis:7-alpine
+    container_name: searxng-redis
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
 
   # --- LLM usage metrics & tracing --------------------------------------
@@ -94,7 +142,6 @@ services:
     depends_on:
       - prometheus
       - tempo
-      - loki
     restart: unless-stopped
 
 volumes:
@@ -102,3 +149,5 @@ volumes:
   tempo-data:
   loki-data:
   grafana-data:
+  redis-data:
+  tor-data:

@@ -71,3 +71,26 @@ Top level also has `query`, `number_of_results`, and sometimes `suggestions`.
   sandbox container the host instance is at `http://host.docker.internal:8888`.
 - **Zero results but engines returned data**: `number_of_results` can be `0` even
   when `results` is populated (engine-dependent); rely on the `results` array.
+
+### Tor egress (duckduckgo / brave / mojeek engines)
+
+These engines are IP-banned from the residential IP, so they are routed through
+a Tor SOCKS5 container (`searxng-tor`, defined in `tools/docker-compose.yml`,
+SOCKS5 on port 9050, config in `tools/searxng/tor/torrc`). SearXNG references it
+via `outgoing.networks.tor` + per-engine `network: tor` in
+`tools/searxng/settings.yml`.
+
+Symptoms and fixes:
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `[engine, "Suspended: ..."]` in `unresponsive_engines` for tor-routed engines only | tor container down or bootstrap pending | `docker compose -f tools/docker-compose.yml up -d tor && docker ps \| grep searxng-tor` (wait for `(healthy)`) |
+| searxng container restart-loops at startup with `Invalid network configuration` | tor not exit-ready when searxng boots (boot-time Tor check) | ensure tor is healthy first: compose `depends_on: tor: condition: service_healthy` handles this; after a cold start wait ~1 min |
+| all engines slow / timeouts | tor overloaded or exit flagged | restart tor container (fresh circuits); google is unaffected (direct network) |
+
+Quick probe from host:
+
+```bash
+curl -s --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip
+# {"IsTor":true,"IP":"<exit-ip>"} == OK
+```

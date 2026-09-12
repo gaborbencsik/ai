@@ -1,0 +1,47 @@
+# SearXNG bot detection / rate limiter configuration.
+# Activated when server.limiter = true in settings.yml.
+# Requires Redis (SEARXNG_REDIS_URL env var).
+
+[botdetection]
+
+# Number of leading bits used to group client IPs.
+# 32 = each IPv4 address is tracked individually; 48 = /48 for IPv6.
+ipv4_prefix = 32
+ipv6_prefix = 48
+
+# If the request IP is in trusted_proxies, the client IP is extracted
+# from X-Forwarded-For / X-Real-IP headers.  Add your reverse-proxy
+# network here if SearXNG sits behind one.
+trusted_proxies = [
+  '127.0.0.0/8',
+  '::1',
+  # '172.16.0.0/12',  # Docker bridge network
+]
+
+[botdetection.ip_limit]
+
+# Link-local addresses (fe80::/10, 169.254.0.0/16) are not rate-limited.
+filter_link_local = false
+
+# link_token: embeds a token in the HTML page that bots must return.
+# Slightly more effective but adds a round-trip for first search.
+link_token = false
+
+[botdetection.ip_lists]
+
+# Block-list / pass-list for individual IPs or CIDR ranges.
+# pass_ip has priority over all other bot detection methods.
+block_ip = [
+  # '93.184.216.34',
+]
+
+# Allow unrestricted access from local/private networks.
+pass_ip = [
+  '192.168.0.0/16',      # IPv4 private network
+  '172.16.0.0/12',       # Docker bridge network
+  '10.0.0.0/8',          # IPv4 private network
+  'fe80::/10',           # IPv6 link-local
+  'fc00::/7',            # IPv6 unique local
+]
+
+pass_searxng_org = true

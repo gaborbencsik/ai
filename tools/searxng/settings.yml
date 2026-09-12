@@ -2,7 +2,7 @@ use_default_settings: true
 
 server:
   secret_key: "my-local-searxng-secret-key-2026"
-  limiter: false
+  limiter: true
   image_proxy: true
   method: "GET"
 
@@ -11,10 +11,169 @@ search:
   formats:
     - html
     - json
+  # Back off aggressively when upstream engines return CAPTCHA or 403.
+  # Default suspension times are too short for residential IPs, causing
+  # repeated retries that worsen the ban. These values ensure a long
+  # cool-down before retrying a blocked engine.
+  # Back off when upstream engines return CAPTCHA or 403. Tune: google's
+  # /wml/search endpoint returns transient 302->/sorry redirects under load
+  # (verified 2026-09-12: bursts of 302s that clear within seconds). A 24h
+  # suspension for one transient 302 would take the only general engine
+  # down for a day — 15 min lets it recover quickly without retry-spam
+  # (suspended engines skip requests entirely until the timer expires).
+  suspended_times:
+    SearxEngineAccessDenied: 3600   # 1h — tor-routed engines 403 from
+                                    # minute-scale exit penalty windows; a
+                                    # 24h suspend would be disproportionate.
+                                    # Real IP bans still exhaust retries first.
+    SearxEngineCaptcha: 900          # 15 min — google wml 302s are transient
+    SearxEngineTooManyRequests: 600  # 10 min — tor exits rotate every 2 min,
+                                     # a 429 from one flagged exit must not
+                                     # suspend an engine for an hour
 
 outgoing:
   request_timeout: 10.0
+  extra_proxy_timeout: 10   # seconds added for proxy overhead (tor latency)
   max_request_timeout: 20.0
+  # A contact suffix helps if an engine wants to block you — some
+  # upstream providers check for a contactable UA before banning.
+  useragent_suffix: ""
+  # Named network "tor": egress for engines that get IP-banned from the
+  # residential IP (duckduckgo, brave, mojeek). The tor container is defined
+  # in docker-compose.yml (service `tor`, SOCKS5 on 9050); compose gatekeeps
+  # searxng startup on tor healthiness (socks5h:// = DNS also via Tor —
+  # required by SearXNG's check_tor_proxy).
+  #
+  # A single static VPN would NOT fix the engine bans: shared datacenter
+  # exits have worse reputation than residential IPs; rotation is the fix.
+  # Tor rotates circuits (~10 min) — measured 2026-09-12: ddg/brave/mojeek
+  # all return clean 200s via Tor while banned direct. google stays direct
+  networks:
+    tor:
+      proxies:
+        all://: socks5h://tor:9050
+      using_tor_proxy: true
+      # Exit quality varies per circuit (MaxCircuitDirtiness=120 rotates them):
+      # flagged exits answer 403 (DDG) / 429 (Brave). Retry on those codes —
+      # retries rebuild the HTTP client; combined with 2-min circuit rotation
+      # a retry usually lands on a clean exit.
+      retries: 6
+      retry_on_http_error: [403, 429]
 
 ui:
   static_use_hash: true
+
+# Engine overrides: disable chronically blocked / CAPTCHA'd engines,
+# enable reliable alternatives.  The default config enables 83 engines
+# many of which (duckduckgo, brave, startpage, bing) get IP-banned quickly
+# from a residential connection without a proxy pool.
+engines:
+  # --- Blocked from residential IP → routed via the tor network ---
+  # Verified 2026-09-12: ddg/brave/mojeek return clean 200s through a local
+  # Tor SOCKS5 while banned/blocked direct. startpage stays off (sc-code
+  # challenge fires regardless of egress IP); bing/qwant: untested via Tor,
+  # keep off until verified.
+  - name: duckduckgo
+    network: tor
+    disabled: false
+  - name: brave
+    network: tor
+    disabled: false
+  - name: brave.images
+    network: tor
+    disabled: false
+  - name: brave.videos
+    network: tor
+    disabled: false
+  - name: brave.news
+    network: tor
+    disabled: false
+  - name: mojeek
+    network: tor
+    disabled: false
+  - name: mojeek images
+    network: tor
+    disabled: false
+  - name: mojeek news
+    network: tor
+    disabled: false
+  # startpage / bing / qwant: disabled — startpage sc-code challenge fires
+  # regardless of egress; bing connection-drops and qwant CAPTCHAs untested
+  # via Tor, keep off until verified.
+  - name: startpage
+    disabled: true
+  - name: startpage news
+    disabled: true
+  - name: startpage images
+    disabled: true
+  - name: bing
+    disabled: true
+  - name: bing images
+    disabled: true
+  - name: bing news
+    disabled: true
+  - name: bing videos
+    disabled: true
+  - name: qwant
+    disabled: true
+  - name: qwant news
+    disabled: true
+  - name: qwant images
+    disabled: true
+  - name: qwant videos
+    disabled: true
+
+  # --- Enable reliable general-purpose engines ---
+  - name: google
+    disabled: false
+  - name: google news
+    disabled: false
+  - name: google videos
+    disabled: false
+  - name: google cse
+    disabled: true
+  - name: google cse images
+    disabled: true
+  - name: qwant
+    disabled: true
+  - name: qwant news
+    disabled: true
+  - name: qwant images
+    disabled: true
+  - name: qwant videos
+    disabled: true
+  # mojeek (3 variants) — 403 rate-block from residential IP after ~8
+  # rapid queries (verified 2026-09-12, suspended_time=86400). Disabled
+  # same as duckduckgo/brave/startpage/bing/qwant.
+  - name: mojeek
+    disabled: true
+  - name: mojeek images
+    disabled: true
+  - name: mojeek news
+    disabled: true
+
+  # --- Keep useful non-general engines enabled ---
+  - name: wikipedia
+    disabled: false
+  - name: wikidata
+    disabled: false
+  - name: github
+    disabled: false
+  - name: stackoverflow
+    disabled: false
+  - name: arxiv
+    disabled: false
+  - name: pubmed
+    disabled: false
+  - name: semantic scholar
+    disabled: false
+  - name: google scholar
+    disabled: false
+  - name: youtube
+    disabled: false
+  - name: openstreetmap
+    disabled: false
+  - name: reuters
+    disabled: false
+  - name: wikinews
+    disabled: false

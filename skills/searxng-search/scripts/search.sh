@@ -59,6 +59,12 @@ if [[ "$CHECK" == "1" ]]; then
   body=$(curl -s -m 15 "$BASE/search?q=ping&format=json" || true)
   if echo "$body" | jq -e '.results' >/dev/null 2>&1; then
     echo "json api: OK"
+    # tor-routed engines (duckduckgo/brave/mojeek) health — see advanced.md
+    if echo "$body" | jq -e '.unresponsive_engines[]? | select(.[0] == "duckduckgo" or .[0] == "brave" or .[0] == "mojeek")' >/dev/null 2>&1; then
+      echo "tor engines: SUSPENDED — check the searxng-tor container (docker ps | grep searxng-tor)" >&2
+      exit 1
+    fi
+    echo "tor engines: OK (none suspended)"
     exit 0
   else
     echo "json api: UNAVAILABLE (enable search.formats: [html, json] in settings.yml)" >&2

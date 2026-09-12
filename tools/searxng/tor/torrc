@@ -1,0 +1,16 @@
+# Tor SOCKS5 for SearXNG engine egress (see docker-compose.yml service `tor`).
+# Only engines wired via settings.yml outgoing.networks.tor route through here;
+# everything else (incl. google) keeps the direct network path.
+SocksPort 0.0.0.0:9050
+# Rotate general-purpose circuits every 2 min so pre-flagged exits are
+# left quickly (DDG 403 / Brave 429 are exit-IP-bound; verified 2026-09-12
+# that exit quality is the deciding factor).
+MaxCircuitDirtiness 120
+
+# Only the compose bridge networks may use this proxy.
+SocksPolicy accept 127.0.0.1
+SocksPolicy accept 172.16.0.0/12
+SocksPolicy accept 192.168.0.0/16
+SocksPolicy reject *
+
+Log notice stdout
