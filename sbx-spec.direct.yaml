@@ -1,0 +1,665 @@
+schemaVersion: "1"
+kind: mixin
+name: my-sandbox-kit
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DIRECT-API VARIANT of sbx-spec.yaml.
+#
+# This spec talks to the Anthropic API directly instead of routing through the
+# local gateway proxy (http://host.docker.internal:6655/anthropic/). Use it when
+# you are NOT running the proxy. Everything below the `environment:` block is
+# identical to sbx-spec.yaml — only the model/auth wiring differs.
+#
+# What changed vs. the proxy spec:
+#   • ANTHROPIC_BASE_URL   removed  → defaults to https://api.anthropic.com
+#   • ANTHROPIC_MODEL      removed  → Claude Code uses its built-in default model
+#                                     (the "anthropic--claude-opus-latest" alias
+#                                     was a proxy-side name, not a real API id)
+#   • ANTHROPIC_API_KEY    removed  → authenticate one of two ways instead:
+#       (a) run `claude` once in the sandbox and log in via OAuth (recommended —
+#           no secret in this git-tracked file), or
+#       (b) inject the key at runtime from the host env; do NOT hardcode it here.
+#   • no_proxy / NO_PROXY  removed  → only needed to bypass a proxy that no
+#                                     longer exists. OTLP telemetry reaches the
+#                                     host collector directly regardless.
+#
+# If you have no OTLP collector running, set CLAUDE_CODE_ENABLE_TELEMETRY: "0".
+# ─────────────────────────────────────────────────────────────────────────────
+
+environment:
+  variables:
+    # Direct Anthropic API — no proxy. Authenticate via OAuth (`claude` login)
+    # or inject ANTHROPIC_API_KEY at runtime from the host; never commit a key.
+    # ANTHROPIC_BASE_URL intentionally unset → https://api.anthropic.com
+    # ANTHROPIC_MODEL intentionally unset → Claude Code's built-in default
+    #   (set to a real id like "claude-opus-4-8" only if you need to pin one).
+    CLAUDE_CODE_ENABLE_TELEMETRY: "1"
+    OTEL_METRICS_EXPORTER: "otlp"
+    OTEL_LOGS_EXPORTER: "otlp"
+    # Include the actual prompt text in exported logs (off by default for privacy).
+    # Local/personal use — see llm-usage-foundation.md on content capture being opt-in.
+    OTEL_LOG_USER_PROMPTS: "1"
+    # One untruncated <uuid>.request.json per API request, holding the raw
+    # Messages API params (system / messages / tools + model). The only source
+    # from which the /context-style input-token split can be reconstructed —
+    # the OTEL token metric only reports a single aggregate input count.
+    # The context-split-exporter daemon (see startup) measures each file and
+    # DELETES it, bounding disk use and prompt-content residency on disk.
+    # No-op when telemetry is disabled (no collector); kept for symmetry.
+    OTEL_LOG_RAW_API_BODIES: "file:/home/agent/.claude/api-bodies"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://host.docker.internal:4318"
+    # Placeholder — the kit-build script stamps the real project/sandbox labels
+    # at build time (host-side values, like the API key). See otel-labels-changes.md.
+    OTEL_RESOURCE_ATTRIBUTES: "project=PLACEHOLDER"
+    SEARXNG_URL: "http://host.docker.internal:8888"
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "70"
+
+commands:
+  install:
+    - command: "mkdir -p /home/agent/.claude/skills && git clone --depth 1 https://github.com/Valetudox/claude-searxng-plugin /tmp/searxng-plugin && cp -r /tmp/searxng-plugin/.claude/skills/searchx /home/agent/.claude/skills/searchx && cp /tmp/searxng-plugin/.claude/settings.json /home/agent/.claude/settings.json && rm -rf /tmp/searxng-plugin"
+      user: "1000"
+
+    - command: "rm -rf /home/agent/.claude/skills/deep-research && git clone --depth 1 https://github.com/199-biotechnologies/claude-deep-research-skill /home/agent/.claude/skills/deep-research"
+      user: "1000"
+
+    # Clone council as a skill only. Its .claude-plugin/ dir makes Claude Code
+    # auto-register it as a plugin, exposing all 18 members as namespaced
+    # subagents (council:council-{name}) — which /council resolves via its
+    # "Asset Resolution" section. We deliberately DO NOT `cp -sf` the agents
+    # into ~/.claude/agents/: that would load a second, standalone copy of the
+    # same 18 descriptions into the system prompt (36 total), doubling the
+    # always-on context cost for zero benefit.
+    - command: 'rm -rf /home/agent/.claude/skills/council && git clone --depth 1 https://github.com/0xNyk/council-of-high-intelligence /home/agent/.claude/skills/council'
+      user: "1000"
+
+    # Package the 7 wiki-* skills as a single DISABLED plugin instead of 7 flat
+    # skills. Flat skills load their description into the system prompt on EVERY
+    # session (~0.5k always-on); bundling them under a .claude-plugin/ dir makes
+    # Claude Code auto-register them as one toggleable plugin whose skill
+    # descriptions stay OUT of context until enabled via /plugin (same mechanism
+    # as council/developer/product-marketing — verified: council bundles a
+    # skills/ subdir yet none of its skills appear in /context while disabled).
+    # enabledPlugins seeds "wiki@skills-dir": false at startup.
+    - command: |
+        set -euo pipefail
+        git clone --depth 1 https://github.com/kfchou/wiki-skills /tmp/wiki-skills
+        rm -rf /home/agent/.claude/skills/wiki
+        mkdir -p /home/agent/.claude/skills/wiki/.claude-plugin \
+                 /home/agent/.claude/skills/wiki/skills
+        cp -r /tmp/wiki-skills/skills/wiki-* /home/agent/.claude/skills/wiki/skills/
+        # Remove any pre-existing flat wiki-* dirs from an older install layout.
+        rm -rf /home/agent/.claude/skills/wiki-*
+        cat > /home/agent/.claude/skills/wiki/.claude-plugin/plugin.json <<'JSON'
+        {
+          "name": "wiki",
+          "displayName": "Personal Wiki",
+          "version": "1.0.0",
+          "description": "Build and query a personal markdown wiki: init, ingest, update, query, lint, audit, and merge pages. Toggle with /plugin.",
+          "author": {"name": "kfchou", "url": "https://github.com/kfchou"},
+          "homepage": "https://github.com/kfchou/wiki-skills",
+          "repository": "https://github.com/kfchou/wiki-skills",
+          "license": "MIT",
+          "keywords": ["wiki", "notes", "knowledge-base", "markdown"]
+        }
+        JSON
+        rm -rf /tmp/wiki-skills
+      user: "1000"
+      description: Install wiki-* skills as a single disabled plugin (context-lean)
+
+    - command: 'uv tool install "semble[mcp]"'
+      user: "1000"
+
+    - command: |
+        set -euo pipefail
+        # qmd's native deps (tree-sitter-javascript, better-sqlite3) build via
+        # node-gyp — arm64 has no prebuild binary, so g++/make must be present.
+        # The base image ships neither.
+        #
+        # `apt-get update` refreshes EVERY configured source, so a transient
+        # mirror-sync error on an unrelated repo (e.g. download.docker.com:
+        # "File has unexpected size … Mirror sync in progress?") makes the
+        # whole update exit 100 and aborts the build — even though the Ubuntu
+        # indices we actually need fetched fine ("old ones used instead").
+        # So: retry a few times for transient hiccups, and never let a failed
+        # `update` abort the build. The `install` below is the real gate — it
+        # fails loudly on its own if build-essential is genuinely unavailable.
+        for i in 1 2 3; do
+          sudo apt-get update -qq && break
+          echo "apt-get update attempt $i failed (transient?); retrying in 5s..."
+          sleep 5
+        done
+        sudo apt-get install -y --no-install-recommends build-essential python3
+      user: "1000"
+      description: Install C/C++ toolchain for npm native addons (qmd)
+
+    - command: |
+        set -euo pipefail
+        # qmd needs Node.js >= 22. Install via nvm if the system node is missing or too old.
+        need_install=1
+        if command -v node >/dev/null 2>&1; then
+            major=$(node -p 'process.versions.node.split(".")[0]')
+            [ "$major" -ge 22 ] && need_install=0 || true
+        fi
+        if [ "$need_install" = 1 ]; then
+            export NVM_DIR="$HOME/.nvm"
+            if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+                curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            fi
+            # shellcheck disable=SC1091
+            . "$NVM_DIR/nvm.sh"
+            nvm install 22
+            nvm alias default 22
+            # Persist for future bash invocations (nvm.sh is safe; completions are NOT sourced).
+            grep -q 'NVM_DIR="$HOME/.nvm"' /etc/sandbox-persistent.sh 2>/dev/null || \
+                echo 'export NVM_DIR="$HOME/.nvm"' | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+            grep -q 'nvm.sh' /etc/sandbox-persistent.sh 2>/dev/null || \
+                echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+        else
+            # nvm is already active; just source it if present.
+            [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+        fi
+        npm install -g @tobilu/qmd
+        # Persist the npm-global bin dir so startup scripts (which run as
+        # a fresh `su ... bash -lc` with a bare /etc/environment PATH) can
+        # find qmd. Without this the qmd-index startup step logs
+        # "[qmd-index] qmd not found, skipping" even though qmd is installed.
+        NPM_BIN="$(npm config get prefix)/bin"
+        grep -q "$NPM_BIN" /etc/sandbox-persistent.sh 2>/dev/null || \
+            echo "export PATH=\"$NPM_BIN:\$PATH\"" | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+        command -v qmd >/dev/null || { echo "MISSING: qmd after npm install"; exit 1; }
+        echo "[OK] qmd installed: $(qmd --version 2>/dev/null || echo unknown)"
+      user: "1000"
+      description: Install qmd (Node >= 22 via nvm if needed) from npm
+
+    - command: |
+        set -euo pipefail
+        # Playwright MCP lets Claude drive a real browser (navigate, click,
+        # snapshot, fill forms). Needs Node >= 22 — the qmd step above already
+        # installed it via nvm if the base image's node was too old, so source
+        # nvm here to get the right node/npm on PATH in this non-login shell.
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+
+        # Install the package into the npm global cache. We do NOT rely on the
+        # bin name it exposes — recent releases renamed it (playwright-mcp → mcp)
+        # and it has never been "mcp-server-playwright". The MCP server is
+        # launched via `npx @playwright/mcp` in the registration step below,
+        # which is the invocation Microsoft documents.
+        npm install -g @playwright/mcp
+
+        # Install the Chromium browser the MCP will drive. CRITICAL: we must use
+        # the playwright CLI *bundled inside @playwright/mcp*, NOT a bare
+        # `npx playwright install`. The MCP pins a specific (often alpha)
+        # playwright version — e.g. mcp 0.0.78 → playwright 1.62-alpha, browser
+        # revision chromium-1232 — whereas bare `npx playwright` resolves to the
+        # latest stable (1.61.1 → a DIFFERENT revision). Installing with the
+        # wrong CLI downloads a browser revision the MCP does not look for at
+        # runtime, so the MCP reports "browser not installed" and it has to be
+        # re-installed inside the session. Resolving the browser download through
+        # the MCP's own node_modules keeps the revision in lockstep.
+        MCP_DIR="$(npm root -g)/@playwright/mcp"
+        PW_CLI="$MCP_DIR/node_modules/playwright/cli.js"
+        test -f "$PW_CLI" || { echo "MISSING: bundled playwright CLI at $PW_CLI"; exit 1; }
+        # install-deps needs root (system libs); the browser download runs as the
+        # agent user so the cache lands in $HOME/.cache/ms-playwright.
+        sudo env "PATH=$PATH" node "$PW_CLI" install-deps chromium
+        node "$PW_CLI" install chromium
+
+        # Persist the npm-global bin dir (idempotent) so startup scripts running
+        # as a fresh `su ... bash -lc` can resolve npx and the package.
+        NPM_BIN="$(npm config get prefix)/bin"
+        grep -q "$NPM_BIN" /etc/sandbox-persistent.sh 2>/dev/null || \
+            echo "export PATH=\"$NPM_BIN:\$PATH\"" | sudo tee -a /etc/sandbox-persistent.sh >/dev/null
+
+        # Verify: the bundled playwright must report chromium as installed, and
+        # the package itself must answer --version (bin-name agnostic).
+        node "$PW_CLI" install --list 2>/dev/null | grep -q 'chromium-' \
+            || { echo "MISSING: chromium not installed for the MCP's playwright revision"; exit 1; }
+        npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp after npm install"; exit 1; }
+        echo "[OK] Playwright MCP installed: $(npx --yes @playwright/mcp --version 2>/dev/null || echo unknown)"
+      user: "1000"
+      description: Install Playwright MCP (browser automation) + Chromium
+
+    - command: 'uv run --with model2vec python -c "from model2vec import StaticModel; StaticModel.from_pretrained(''minishlab/potion-code-16M'')"'
+      user: "1000"
+
+    - command: |
+        set -euo pipefail
+        mkdir -p "$HOME/.claude/agents"
+        cp "$HOME/.local/share/uv/tools/semble/lib/python"*/site-packages/semble/agents/claude.md \
+           "$HOME/.claude/agents/semble-search.md"
+      user: "1000"
+
+    - command: |
+        set -euo pipefail
+        for d in searchx deep-research council; do
+          test -d "/home/agent/.claude/skills/$d" || { echo "MISSING: $d"; exit 1; }
+        done
+        test -f /home/agent/.claude/skills/wiki/.claude-plugin/plugin.json || { echo "MISSING: wiki plugin"; exit 1; }
+        ls /home/agent/.claude/skills/wiki/skills/wiki-* >/dev/null || { echo "MISSING: wiki-* skills"; exit 1; }
+        command -v semble >/dev/null || { echo "MISSING: semble"; exit 1; }
+        test -f /home/agent/.claude/agents/semble-search.md || { echo "MISSING: semble-search agent"; exit 1; }
+        # qmd + playwright-mcp — source nvm so PATH is populated in this non-login shell
+        [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" || true
+        command -v qmd >/dev/null || { echo "MISSING: qmd"; exit 1; }
+        npx --yes @playwright/mcp --version >/dev/null 2>&1 || { echo "MISSING: @playwright/mcp"; exit 1; }
+        # The MCP's bundled playwright must have a matching chromium revision on
+        # disk, else the MCP falls back to "browser not installed" at runtime.
+        node "$(npm root -g)/@playwright/mcp/node_modules/playwright/cli.js" install --list 2>/dev/null \
+            | grep -q 'chromium-' || { echo "MISSING: chromium for playwright-mcp revision"; exit 1; }
+        echo "[OK] all skills, semble, semble-search agent, qmd, and playwright-mcp (with chromium) present"
+      user: "1000"
+      description: Verify install
+
+  startup:
+    - command:
+        - sh
+        - -c
+        - "git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills"
+      user: "1000"
+      description: Clone gaborbencsik/ai to /tmp/gb-skills
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/hooks
+          cp /tmp/gb-skills/hooks/post-summary/post-response-summary.sh \
+             /home/agent/.claude/hooks/post-response-summary.sh
+          chmod +x /home/agent/.claude/hooks/post-response-summary.sh
+          jq --slurpfile h /tmp/gb-skills/hooks/post-summary/post-summary.json \
+             '.hooks = $h[0]' /home/agent/.claude/settings.json \
+             > /tmp/settings.json.new
+          mv /tmp/settings.json.new /home/agent/.claude/settings.json
+      user: "1000"
+      description: Install Stop hook from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # Land the two agent plugins under the skills-dir. Each dir carries a
+          # .claude-plugin/ so Claude Code auto-registers it as a plugin and
+          # exposes its agents as namespaced subagents (developer:software-engineer,
+          # product-marketing:story-writer, …), toggleable via /plugin. We do NOT
+          # copy agents flat into ~/.claude/agents anymore: the namespaced plugin
+          # form is what lets whole capability sets be switched on/off.
+          mkdir -p /home/agent/.claude/skills
+          for p in developer product-marketing; do
+              if [ -d "/tmp/gb-skills/plugins/$p" ]; then
+                  rm -rf "/home/agent/.claude/skills/$p"
+                  cp -r "/tmp/gb-skills/plugins/$p" "/home/agent/.claude/skills/$p"
+                  test -f "/home/agent/.claude/skills/$p/.claude-plugin/plugin.json" \
+                      || { echo "MISSING: $p/.claude-plugin/plugin.json after copy"; exit 1; }
+                  echo "[agents] installed plugin: $p"
+              else
+                  echo "[agents] WARNING: /tmp/gb-skills/plugins/$p missing, skipping"
+              fi
+          done
+      user: "1000"
+      description: Install developer + product-marketing agent plugins from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          python3 - <<'PY'
+          import json, os, pathlib, stat
+          # Seed enabledPlugins so a fresh sandbox starts with a LEAN always-on
+          # context: all four plugins register (auto-discovered from skills-dir)
+          # but load DISABLED, keeping their agent/skill descriptions out of the
+          # system prompt until switched on via /plugin. Keys not listed here keep
+          # Claude Code's default. NOTE: the authoritative store is
+          # ~/.claude/settings.json (the top-level ~/.claude.json is app-state and
+          # is NOT read for this) — so we merge into settings.json, preserving
+          # hooks and other keys.
+          desired = {
+              "council@skills-dir": False,
+              "developer@skills-dir": False,
+              "product-marketing@skills-dir": False,
+              "wiki@skills-dir": False,
+          }
+          p = pathlib.Path.home() / ".claude" / "settings.json"
+          cfg = {}
+          if p.exists():
+              try:
+                  cfg = json.loads(p.read_text())
+              except Exception:
+                  cfg = {}
+          enabled = cfg.get("enabledPlugins")
+          if not isinstance(enabled, dict):
+              enabled = {}
+          changed = False
+          for name, state in desired.items():
+              if enabled.get(name) != state:
+                  enabled[name] = state
+                  changed = True
+          if not changed:
+              print("[OK] enabledPlugins already seeded, no change")
+          else:
+              cfg["enabledPlugins"] = enabled
+              p.parent.mkdir(parents=True, exist_ok=True)
+              if p.exists():
+                  os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
+              p.write_text(json.dumps(cfg, indent=2) + "\n")
+              print("[OK] seeded enabledPlugins in settings.json: council + developer + product-marketing + wiki all off")
+          PY
+      user: "1000"
+      description: Seed enabledPlugins in ~/.claude/settings.json (council + developer + product-marketing + wiki all off; idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # The sandbox image bakes a ~19 KB /Users/.../Hobby/CLAUDE.md (the
+          # "# Project Guidance" + sandbox/persistent-env/network boilerplate)
+          # into the writable overlay layer. Claude Code walks UP the directory
+          # tree and loads every ancestor CLAUDE.md, so this parent file costs
+          # ~7.5k tokens of context on EVERY session start even though the real
+          # project lives in a subdir. It is not on the host disk and the spec
+          # does not create it, so we are free to shrink it in place: replace it
+          # with a short stub that keeps only the rules that actually bite,
+          # dropping ~90% of the tokens. WORKSPACE_DIR is the direct-mode host
+          # mount (set on PID 1's env); its parent is where the baked file sits.
+          # Idempotent: the stub starts with a marker line we grep for.
+          # We only ever shrink an EXISTING baked file — if WORKSPACE_DIR is
+          # unset or no parent CLAUDE.md exists, we do not know where the baked
+          # file lives, so we skip rather than drop a stray stub in the wrong dir.
+          if [ -z "${WORKSPACE_DIR:-}" ]; then
+            echo "[skip] WORKSPACE_DIR unset; cannot locate parent CLAUDE.md"
+            exit 0
+          fi
+          BAKED="$(dirname "$WORKSPACE_DIR")/CLAUDE.md"
+          MARKER="<!-- sandbox-stub v1 -->"
+          if [ ! -f "$BAKED" ]; then
+            echo "[skip] no parent CLAUDE.md at $BAKED; nothing to stub"
+          elif head -1 "$BAKED" | grep -qF "$MARKER"; then
+            echo "[OK] parent CLAUDE.md already stubbed, no change"
+          else
+            cat > "$BAKED" <<STUB
+          $MARKER
+          # Sandbox notes
+
+          Minimal parent memory — the sandbox baked a large CLAUDE.md here that
+          cost ~7.5k tokens per session; this stub keeps only what bites.
+
+          - **Persistent env** (\`/etc/sandbox-persistent.sh\`, sourced before every
+            Bash call): append \`export\`s to persist across shells. NEVER add shell
+            completion scripts — they read \`COMP_*\` vars absent outside completion
+            and silently break every Bash command. If a tool is missing from PATH,
+            run it via \`bash -l -c "..."\`.
+          - **Git**: push and open PRs directly from inside the sandbox — auth is
+            injected at the proxy. \`gh auth status\` showing "not logged in" is
+            expected and does not block push. Do not ask the user to push locally.
+          - **Workspace mode**: direct mode (default) mounts the host tree, so edits
+            appear on the host immediately; clone mode keeps commits in-sandbox until
+            fetched. Check: \`[ -d /run/sandbox/source ] && echo clone || echo direct\`.
+          - **Network**: blocked HTTP returns 403 with a structured reason body; a
+            default-deny domain is fixed on the host with \`sbx policy allow network <domain>\`.
+          - Full original guidance (if ever needed) is reconstructable from the spec.
+          STUB
+            echo "[OK] replaced parent CLAUDE.md with short stub ($BAKED)"
+          fi
+      user: "1000"
+      description: Replace the image-baked parent CLAUDE.md with a short stub (~7.5k token context saving; idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # Only the /semble command — NOT a semble-search SKILL.md. The command
+          # delegates to the `semble-search` subagent (installed flat in
+          # ~/.claude/agents), whose description already loads for auto-delegation;
+          # a parallel SKILL.md just duplicated that ~240 tokens into the system
+          # prompt for zero added capability. Drop any stale copy from older installs.
+          mkdir -p /home/agent/.claude/commands
+          rm -rf /home/agent/.claude/skills/semble-search
+          cp /tmp/gb-skills/commands/semble.md \
+             /home/agent/.claude/commands/semble.md
+      user: "1000"
+      description: Install semble /command from gaborbencsik/ai (agent-only, no redundant SKILL; idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/skills/qmd /home/agent/.claude/commands
+          cp /tmp/gb-skills/skills/qmd/SKILL.md \
+             /home/agent/.claude/skills/qmd/SKILL.md
+          cp /tmp/gb-skills/commands/qmd.md \
+             /home/agent/.claude/commands/qmd.md
+      user: "1000"
+      description: Install qmd skill+command from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          mkdir -p /home/agent/.claude/skills/md-to-slides /home/agent/.claude/commands
+          cp /tmp/gb-skills/skills/md-to-slides/SKILL.md \
+             /home/agent/.claude/skills/md-to-slides/SKILL.md
+          cp /tmp/gb-skills/commands/slides.md \
+             /home/agent/.claude/commands/slides.md
+          # NOTE: /tmp/gb-skills is deleted by the LAST consumer (the
+          # context-split exporter step), not here — other later steps still
+          # read from it.
+      user: "1000"
+      description: Install md-to-slides skill+command from gaborbencsik/ai and clean up (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          python3 - <<'PY'
+          import json, os, pathlib, stat
+          p = pathlib.Path.home() / ".claude.json"
+          cfg = {}
+          if p.exists():
+              try:
+                  cfg = json.loads(p.read_text())
+              except Exception:
+                  cfg = {}
+          servers = cfg.get("mcpServers") or {}
+          desired_servers = {
+              "semble":     {"type": "stdio", "command": "semble",                 "args": []},
+              "qmd":        {"type": "stdio", "command": "qmd",                    "args": ["mcp"]},
+              # --browser chromium is REQUIRED: @playwright/mcp defaults to
+              # channel:"chrome" (system Google Chrome at /opt/google/chrome/chrome),
+              # which does not exist here and has no arm64 build. This flag makes it
+              # launch the bundled Chromium we downloaded via `playwright install`.
+              "playwright": {"type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp", "--browser", "chromium", "--headless", "--isolated"]},
+          }
+          changed = False
+          for name, spec in desired_servers.items():
+              if servers.get(name) != spec:
+                  servers[name] = spec
+                  changed = True
+          # Playwright ships ~24 browser_* tools (~6k tokens of context) that most
+          # sessions never touch. Keep it REGISTERED (installed + toggleable) but
+          # OFF by default: Claude Code honours the top-level "disabledMcpServers"
+          # list, so its tools are not loaded on startup. The user re-enables it
+          # anytime from the /mcp panel (which rewrites this list for them).
+          disabled = cfg.get("disabledMcpServers")
+          if not isinstance(disabled, list):
+              disabled = []
+          if "playwright" not in disabled:
+              disabled.append("playwright")
+              changed = True
+          if not changed:
+              print("[OK] semble + qmd + playwright MCP servers already registered (playwright disabled by default), no change")
+          else:
+              cfg["mcpServers"] = servers
+              cfg["disabledMcpServers"] = disabled
+              if p.exists():
+                  os.chmod(p, p.stat().st_mode | stat.S_IWUSR)
+              p.write_text(json.dumps(cfg, indent=2) + "\n")
+              print("[OK] semble + qmd + playwright MCP servers registered in ~/.claude.json (playwright disabled by default)")
+          PY
+      user: "1000"
+      description: Register semble + qmd + playwright MCP servers in ~/.claude.json (playwright disabled by default, idempotent)
+
+    - command:
+        - bash
+        - -lc
+        - |
+          set -euo pipefail
+
+          # qmd is on PATH via /etc/sandbox-persistent.sh (append happens
+          # in the install step). -lc sources the persistent env.
+          command -v qmd >/dev/null || { echo "[qmd-index] qmd not found, skipping"; exit 0; }
+
+          # Pick project root: clone mode exposes the host repo read-only at
+          # /run/sandbox/source; direct mode mounts the working tree at
+          # $WORKSPACE_DIR (set on PID 1's env, survives `su + bash -lc`).
+          # Do NOT fall back to $PWD — the dispatcher's `su` lands in
+          # /home/agent/workspace, which is empty, and would create an
+          # empty collection.
+          if [ -d /run/sandbox/source ]; then
+            PROJECT_ROOT=/run/sandbox/source
+          elif [ -n "${WORKSPACE_DIR:-}" ] && [ -d "$WORKSPACE_DIR" ]; then
+            PROJECT_ROOT="$WORKSPACE_DIR"
+          else
+            echo "[qmd-index] WORKSPACE_DIR unset and no /run/sandbox/source; skipping"
+            exit 0
+          fi
+          echo "[qmd-index] project root: $PROJECT_ROOT"
+
+          # Persist qmd's data (SQLite index + ~319 MB embedding model)
+          # across `sbx rm` by symlinking ~/.cache/qmd to a directory
+          # inside the workspace, which is bind-mounted from the host.
+          # Without this, every recreate re-downloads the model (~6s) and
+          # re-embeds every doc (~28s). See .gitignore for the exclude.
+          PERSIST_CACHE="$PROJECT_ROOT/.qmd-cache"
+          mkdir -p "$PERSIST_CACHE"
+          CACHE_LINK="$HOME/.cache/qmd"
+          mkdir -p "$HOME/.cache"
+          if [ -L "$CACHE_LINK" ]; then
+            # Already a symlink — retarget if needed (ln -sfn is idempotent).
+            ln -sfn "$PERSIST_CACHE" "$CACHE_LINK"
+            echo "[qmd-index] cache already symlinked → $PERSIST_CACHE"
+          elif [ -d "$CACHE_LINK" ]; then
+            if [ -z "$(ls -A "$CACHE_LINK" 2>/dev/null)" ]; then
+              rmdir "$CACHE_LINK"
+              ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+              echo "[qmd-index] linked empty cache dir → $PERSIST_CACHE"
+            else
+              # Migrate existing cache to the persistent location.
+              # cp -an keeps host-side files if a collision exists.
+              echo "[qmd-index] migrating existing cache → $PERSIST_CACHE"
+              cp -an "$CACHE_LINK"/. "$PERSIST_CACHE"/ || true
+              rm -rf "$CACHE_LINK"
+              ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+            fi
+          else
+            ln -s "$PERSIST_CACHE" "$CACHE_LINK"
+            echo "[qmd-index] linked fresh cache → $PERSIST_CACHE"
+          fi
+
+          export QMD_HOME="$HOME/.qmd"
+          mkdir -p "$QMD_HOME"
+
+          # Dedicated 'project' collection so results don't mix with
+          # wiki-*/notes. `qmd collection show` prints "Collection not
+          # found:" to stdout and still exits 0, so check the output.
+          if qmd collection show project 2>&1 | grep -q '^Collection: project'; then
+            echo "[qmd-index] 'project' collection exists, re-indexing"
+            qmd update -c project || echo "[qmd-index] update failed (non-fatal)"
+          else
+            echo "[qmd-index] creating 'project' collection at $PROJECT_ROOT"
+            qmd collection add "$PROJECT_ROOT" \
+                --name project \
+                --include '**/*.md' \
+                --exclude 'node_modules/**' \
+                --exclude '.git/**' \
+                --exclude 'dist/**' \
+                --exclude 'build/**' \
+                || echo "[qmd-index] collection add failed (non-fatal)"
+          fi
+
+          # Embedding is slow on first run (downloads a ~330MB model) — kick
+          # it off in the background so startup returns quickly. Until it
+          # finishes only lex (BM25) search works; vec/hyde come online once
+          # the log reports done.
+          nohup qmd embed >/tmp/qmd-embed.log 2>&1 &
+          echo "[qmd-index] embedding started in background (log: /tmp/qmd-embed.log)"
+      user: "1000"
+      description: Index the project's markdown into qmd on startup (incremental)
+
+    - command:
+        - sh
+        - -c
+        - |
+          set -euo pipefail
+          # Install + launch the context-split token exporter, sourced from the
+          # gaborbencsik/ai clone (see the "Clone gaborbencsik/ai" step). It
+          # reconstructs the /context input-token split (system / messages /
+          # tools) from the raw request bodies Claude Code writes when
+          # OTEL_LOG_RAW_API_BODIES=file:<dir>, and pushes it to the OTLP
+          # collector — the OTEL token metric only reports one aggregate input
+          # count, so this is the only way to get the per-section breakdown into
+          # Prometheus/Grafana.
+          SRC=/tmp/gb-skills/telemetry/context-split-exporter.py
+          # Defensive: if an earlier step already removed the clone (or it was
+          # never present), re-clone shallowly so this step never silently
+          # skips due to step-ordering changes.
+          if [ ! -f "$SRC" ]; then
+            echo "[context-split] $SRC missing; re-cloning gaborbencsik/ai"
+            rm -rf /tmp/gb-skills
+            git clone --depth 1 https://github.com/gaborbencsik/ai /tmp/gb-skills \
+              || echo "[context-split] re-clone failed"
+          fi
+          if [ ! -f "$SRC" ]; then
+            echo "[context-split] $SRC still missing, skipping"
+            exit 0
+          fi
+          mkdir -p /home/agent/.claude/bin
+          cp "$SRC" /home/agent/.claude/bin/context-split-exporter.py
+          chmod +x /home/agent/.claude/bin/context-split-exporter.py
+          # The daemon self-guards on these two vars and exits if either is
+          # unset. They are declared in this spec's environment.variables block,
+          # but that scope is NOT applied to provisioning-step shells (only to
+          # the Claude Code process itself) — so a nohup'd child here would
+          # inherit an empty env and die at boot, which is exactly what the
+          # field report showed (no log file, bodies piling up). Export
+          # deterministic fallbacks that mirror the environment block so the
+          # launch never depends on ambient scope. Any value already in scope
+          # wins; OTEL_RESOURCE_ATTRIBUTES is build-stamped so it has no
+          # hardcodable fallback — its absence only drops the project/sandbox
+          # labels, it does not stop the daemon.
+          export OTEL_LOG_RAW_API_BODIES="${OTEL_LOG_RAW_API_BODIES:-file:/home/agent/.claude/api-bodies}"
+          export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.docker.internal:4318}"
+          # Gate on COLLECTOR REACHABILITY, not on CLAUDE_CODE_ENABLE_TELEMETRY:
+          # that flag is likewise absent from this shell (it defaulted to 0,
+          # which is why the daemon never launched). A curl probe of the OTLP
+          # endpoint is deterministic here and correct for both spec variants —
+          # the proxy build has a collector (start), a collector-less direct
+          # build fails the probe (skip, no wasted POST loop). No -f, so any
+          # HTTP response (even 404/405 from the OTLP root) counts as reachable;
+          # only a connection failure (exit != 0) skips.
+          if ! pgrep -f context-split-exporter.py >/dev/null 2>&1 \
+             && curl -s -o /dev/null --max-time 3 "$OTEL_EXPORTER_OTLP_ENDPOINT"; then
+            nohup python3 /home/agent/.claude/bin/context-split-exporter.py \
+                  >/tmp/context-split-exporter.log 2>&1 &
+            echo "[context-split] exporter started (log: /tmp/context-split-exporter.log)"
+          else
+            echo "[context-split] not started (collector unreachable or already running)"
+          fi
+      user: "1000"
+      description: Install + start the context-split token exporter from gaborbencsik/ai (idempotent)
+
+    - command:
+        - sh
+        - -c
+        - |
+          # Dedicated cleanup: remove the gaborbencsik/ai clone after all steps
+          # that consume it have run. Kept as its own final step so any consumer
+          # can be added or reordered without worrying about who deletes it.
+          rm -rf /tmp/gb-skills
+      user: "1000"
+      description: Clean up the gaborbencsik/ai clone (must stay last)

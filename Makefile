@@ -48,3 +48,12 @@ sbx-run:
 
 sbx-rm:
 	sbx rm $(SBX_NAME)
+
+sbx-create-clean:
+	sbx create --name ai-skills-clean --kit ./clean claude .
+
+sbx-rm-clean:
+	sbx rm ai-skills-clean
+
+sbx-run-clean:
+	sbx run --name ai-skills-clean
