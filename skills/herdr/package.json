@@ -1,0 +1,29 @@
+{
+  "name": "omp-herdr-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic Herdr agent CLI, OMP extension, and skill.",
+  "bin": {
+    "herdr-agent": "./index.ts"
+  },
+  "omp": {
+    "extensions": ["./extension.js"],
+    "skills": ["./SKILL.md"]
+  },
+  "pi": {
+    "extensions": ["./extension.js"],
+    "skills": ["./SKILL.md"]
+  },
+  "scripts": {
+    "build": "bun build extension.ts --target=bun --outfile=extension.js",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  },
+  "peerDependencies": {
+    "@oh-my-pi/pi-coding-agent": "*"
+  }
+}

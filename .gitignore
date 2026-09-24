@@ -5,6 +5,7 @@
 # Built kit dir: sbx-spec.yaml with the real ANTHROPIC_API_KEY injected by
 # `make kit-build`. Contains a secret — never commit.
 /.kit/
+autonomous-dev-*
 
 # Runtime dependencies — reinstall with `npm install` / `npm ci`.
 node_modules/
