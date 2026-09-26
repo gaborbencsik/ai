@@ -89,8 +89,9 @@ export DEEP_RESEARCH_CACHE_DIR="~/.research-cache"
 
 | Issue | Solution |
 |-------|----------|
-| `/research` command not found | Restart OMP after installing |
-| web_search not available | Ensure web_search tool is enabled (`omp --tools web_search`) |
+| SearXNG unreachable | Start the SearXNG container (`tools/docker-compose.yml`); the skill falls back to `web_search` |
+| searxng_search returns HTTP 403 | Add `formats: [html, json]` to the SearXNG settings.yml `search:` section |
+| Agent "research-scout" missing | Ensure agents are symlinked into `~/.omp/agent/agents/` and restart OMP |
 | Research hangs after 10+ min | Increase timeout: `export DEEP_RESEARCH_TIMEOUT_SECONDS=600` |
 | No cache file created | Check `.omp/` directory permissions |
 | Extension won't load | Check logs: `tail -f ~/.omp/logs/omp.$(date +%F).*.log` |
@@ -129,7 +130,8 @@ export DEEP_RESEARCH_CACHE_DIR="~/.research-cache"
 
 ## Integration Points
 
-- **`web_search`** – Multi-provider search
+- **`searxng_search`** – Primary retrieval via local SearXNG (localhost:8888)
+- **`web_search`** – Fallback when SearXNG is unreachable
 - **`agent()`** – Spawn research agents
 - **`hub`** – Multi-agent messaging
 - **`read`** – Fetch URLs for deep analysis

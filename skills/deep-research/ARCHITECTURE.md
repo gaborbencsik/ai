@@ -45,41 +45,34 @@
 
 ## Phase Execution Model
 
-Each phase is **semi-deterministic**:
+Each phase is **semi-deterministic** and runs on a **complexity-routed model tier**:
 
-1. **Scope** (1 agent, <1 min)
-   - Define question boundaries
-   - Output: structured scope document
+| # | Phase | Runner | Model tier |
+|---|-------|--------|------------|
+| 1 | **Scope** (orchestrator, <1 min) | session model | `@default` |
+| 2 | **Plan** (orchestrator, <1 min) | session model | `@default` |
+| 3 | **Retrieve** (research-scout, 5–12 parallel) | delegated | `@smol` (fast/cheap) |
+| 4 | **Triangulate** (tool) | orchestrator | `@default` |
+| 5 | **Outline** (orchestrator, <1 min) | session model | `@default` |
+| 6 | **Synthesize** (research-synthesizer, 2–5 min) | delegated | `@slow` |
+| 7 | **Critique** (research-critic, deep/ultradeep only) | delegated | `@slow`, thinking high |
+| 8 | **Refine** (research-synthesizer, 1–2 min) | delegated | `@slow` |
 
-2. **Plan** (1 agent, <1 min)
-   - Create search categories & keywords
-   - Output: search strategy matrix
+Each delegated agent is an agent definition (`agents/*.md`) whose frontmatter pins the model via a
+role alias; the concrete model is configured once in `modelRoles` (`~/.omp/agent/config.yml`):
 
-3. **Retrieve** (5–12 parallel tasks, 2–5 min)
-   - Fan-out: `agent()` spawn for each search category
-   - Each agent: `web_search` + parse + credibility score
-   - Output: sources with excerpts + credibility
+1. **Scope** — define question boundaries; output structured scope document
+2. **Plan** — search categories, keywords, concrete `searxng_search` queries
+3. **Retrieve** — fan-out to `research-scout` agents (parallel); `searxng_search` (fallback `web_search`) + parse + credibility score; returns sources with excerpts
+4. **Triangulate** — cross-validate major claims vs. sources; loop-back to Retrieve if gaps found
+5. **Outline** — structure findings by claim hierarchy
+6. **Synthesize** — comprehensive findings (600–2k words) + executive summary (200–400 words); verifies load-bearing URLs with `read`
+7. **Critique** — `research-critic` red-teams the draft; severity-ranked findings + suggested gap-closing queries; loop-back on critical gaps
+8. **Refine** — address critique findings, polish language, verify citations
 
-4. **Triangulate** (Tool: triangulate_findings)
-   - Cross-validate major claims vs. sources
-   - Loop-back to Retrieve if gaps found
+Quick mode skips delegation for Synthesize (short narrative stays on the orchestrator) and omits Critique/Refine.
 
-5. **Outline** (1 agent, <1 min)
-   - Structure findings by claim hierarchy
-   - Output: narrative outline
-
-6. **Synthesize** (1 agent, 2–5 min)
-   - Write comprehensive findings (600–2k words)
-   - Executive summary (200–400 words)
-
-7. **Critique** (3 personas, Deep/UltraDeep only, 3–10 min)
-   - Spawn 3 agents with different personas
-   - Identify gaps, weak sources, assumptions
-   - Loop-back if ≥2 critiques find gaps
-
-8. **Refine** (1 agent, 1–2 min)
-   - Address critique findings
-   - Polish language, verify citations
+Cost note: Retrieve is >70% of all model calls in a run; pinning it to `@smol` is the primary cost lever.
 
 ## Tool Ecosystem
 
@@ -87,9 +80,10 @@ Each phase is **semi-deterministic**:
 
 | Tool | Phase(s) | Purpose |
 |------|----------|---------|
-| `web_search` | Retrieve | Multi-provider search aggregation |
-| `read` | Retrieve | Full-text extraction from URLs |
-| `agent()` | All parallel | Spawn domain-specific research agents |
+| `searxng_search` | Retrieve | Local SearXNG JSON API (primary retrieval, localhost:8888) |
+| `web_search` | Retrieve (fallback) | Multi-provider aggregation when SearXNG unreachable |
+| `read` | Retrieve, Synthesize | Full-text extraction from load-bearing URLs |
+| `agent()` | Retrieve, Critique | Spawn research-scout / -synthesizer / -critic agents |
 | `hub` | Orchestration | Multi-agent coordination messages |
 | `eval` | Synthesis | JSON/data processing (optional) |
 

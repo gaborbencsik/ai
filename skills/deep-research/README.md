@@ -100,8 +100,33 @@ Examples:
   - Claim triangulation across 3+ sources
   - Hallucination detection (future: DOI/fact-checker integration)
 
-## Tools Provided
+### `searxng_search` (Tool)
 
+Primary web retrieval — queries the self-hosted SearXNG instance (default `http://localhost:8888`), aggregating results across engines.
+
+**Input**:
+- `query` (required): search query (supports site:, -term, "exact phrase")
+- `categories`: SearXNG category (general, news, science, it, …)
+- `language`: BCP-47 filter (en, hu, …)
+- `limit`: max results (default 10)
+- `base_url`: override the SearXNG base URL
+
+**Requires**: a running SearXNG with `formats: [html, json]` in its settings.yml. Falls back to `web_search` when unreachable.
+
+### Model Routing
+
+Phases run on different model tiers (agent frontmatter pins the role):
+
+| Phase | Agent | Role |
+|-------|-------|------|
+| Scope / Plan / Triangulate / Outline | orchestrator | `@default` |
+| Retrieve | `research-scout` | `@smol` |
+| Synthesize / Refine | `research-synthesizer` | `@slow` |
+| Critique (deep/ultradeep) | `research-critic` | `@slow` |
+
+Quick mode keeps Synthesize on the orchestrator. Change the underlying models via `modelRoles` in `~/.omp/agent/config.yml`.
+
+## Tools Provided
 ### `/research <command>`
 
 Entry point for orchestrated research.
