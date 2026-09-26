@@ -1,0 +1,106 @@
+{
+  "program": "ai-consultancy-sme-ai",
+  "plan": "research-program/PLAN.md",
+  "createdAt": "2026-09-11",
+  "status": "complete",
+  "mode": "deep",
+  "versionSuffix": "-v1-deep",
+  "runs": [
+    {
+      "order": 1,
+      "slug": "ai-consultancy",
+      "promptFile": "research-program/prompts/A-ai-consultancy.md",
+      "originalRun": {
+        "date": "",
+        "mode": "",
+        "report": ""
+      },
+      "output": {
+        "report": "ai-consultancy-v1-deep/report.md",
+        "sources": "ai-consultancy-v1-deep/sources.json",
+        "meta": "ai-consultancy-v1-deep/run-meta.json",
+        "cache": "../.omp/research-cache-2026-09-11-ai-consultancy-v1-deep.json"
+      },
+      "state": "done",
+      "blockedOn": null,
+      "startedAt": "2026-09-11T08:36:21Z"
+    },
+    {
+      "order": 2,
+      "slug": "ai-sme-vendors",
+      "promptFile": "research-program/prompts/B-ai-sme-vendors.md",
+      "originalRun": {
+        "date": "",
+        "mode": "",
+        "report": ""
+      },
+      "output": {
+        "report": "ai-sme-vendors-v1-deep/report.md",
+        "sources": "ai-sme-vendors-v1-deep/sources.json",
+        "meta": "ai-sme-vendors-v1-deep/run-meta.json",
+        "cache": "../.omp/research-cache-2026-09-11-ai-sme-vendors-v1-deep.json"
+      },
+      "state": "done",
+      "blockedOn": null,
+      "startedAt": "2026-09-11T10:30:00Z"
+    },
+    {
+      "order": 3,
+      "slug": "hu-sme-ai-2026",
+      "promptFile": "research-program/prompts/C-hu-sme-ai-2026.md",
+      "originalRun": {
+        "date": "",
+        "mode": "",
+        "report": ""
+      },
+      "output": {
+        "report": "",
+        "sources": "",
+        "meta": "",
+        "cache": ""
+      },
+      "state": "done",
+      "blockedOn": "",
+      "startedAt": "2026-09-11T17:28:14Z",
+      "finishedAt": "2026-09-11T17:56:21Z"
+    }
+  ],
+  "uniformityContract": {
+    "mode": "deep",
+    "register": "A: landscape; B: landscape; C: mixed (per prompt)",
+    "independenceGuard": "No grounding in prior internal runs; fresh evidence only. Forbidden: any prior run's report/sources under research-program/.",
+    "sectionOrder": [
+      "Executive Summary",
+      "Findings",
+      "Qualitative decision matrix",
+      "Directional guidance",
+      "Open questions",
+      "Full bibliography"
+    ],
+    "lineCap": 160,
+    "sourceFloor": 15,
+    "independentSourcesPerClaim": 3,
+    "credibilityLabels": [
+      "highest",
+      "high",
+      "mediumHigh",
+      "medium",
+      "low"
+    ],
+    "language": "en",
+    "execution": "sequential, never parallel",
+    "runSetupNote": "Run C adds: compaction config (thresholdPercent 0.7, keepRecentTokens 40000), checkpoint steering at ~300k input tokens, retrieval preflight (working engines only, pivot after 2 failures). Same model as A/B (per user: same-setup comparison for A/B; C is optimized).",
+    "model": "ollama-cloud/deepseek-v4.1-flash (switched from glm-5.3-flash for run C per user instruction; A/B ran on glm-5.3-flash)",
+    "promptCaching": "provider-native on deepseek-v4.1-flash (~93% prefix cache verified by live probe); glm-5.3-flash does not cache"
+  },
+  "finalArtifact": "research-program/COMPARISON.md",
+  "comparisonRubric": [
+    "effort",
+    "detail",
+    "quality",
+    "verdict table"
+  ],
+  "finalArtifacts": [
+    "research-program/COMPARISON.md"
+  ]
+}

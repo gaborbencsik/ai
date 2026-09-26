@@ -1,0 +1,57 @@
+{
+  "program": "<short-name>",
+  "plan": "<program-root>/PLAN.md",
+  "createdAt": "<YYYY-MM-DD>",
+  "status": "prepared",
+  "mode": "deep",
+  "versionSuffix": "-v1-deep",
+  "runs": [
+    {
+      "order": 1,
+      "slug": "<topic-slug>",
+      "promptFile": "<program-root>/prompts/A-<topic-slug>.md",
+      "originalRun": {
+        "date": "<prior-run-date or null>",
+        "mode": "<standard|quick|ultradeep|null>",
+        "report": "<prior report path or null>"
+      },
+      "output": {
+        "report": "<program-root>/<topic-slug>-v1-deep/report.md",
+        "sources": "<program-root>/<topic-slug>-v1-deep/sources.json",
+        "meta": "<program-root>/<topic-slug>-v1-deep/run-meta.json",
+        "cache": ".omp/research-cache-<RUN-DATE>-<topic-slug>-v1-deep.json"
+      },
+      "state": "pending",
+      "blockedOn": "user go"
+    }
+  ],
+  "uniformityContract": {
+    "mode": "deep",
+    "register": "landscape",
+    "independenceGuard": "no grounding in prior internal runs; fresh retrieval only",
+    "sectionOrder": [
+      "header (date · mode · scope · evidence rule · source labels)",
+      "executive summary 200-400w",
+      "findings 700-1200w >=80% prose",
+      "evidence table",
+      "comparison matrix / region map",
+      "fit-by-use-case",
+      "open questions",
+      "bibliography with credibility tags"
+    ],
+    "lineCap": 160,
+    "sourceFloor": 15,
+    "independentSourcesPerClaim": 3,
+    "credibilityLabels": ["highest", "high", "medium-high", "medium", "low"],
+    "language": "English",
+    "execution": "sequential A→Z, never parallel"
+  },
+  "finalArtifact": "<program-root>/COMPARISON.md",
+  "comparisonRubric": [
+    "effort (duration, agents, tool calls, fallbacks, retrieval failures)",
+    "detail (lines, sections, rows, citation density)",
+    "quality (credibility distribution, triangulation, integrity checks, critic findings)",
+    "depth delta vs prior mode per topic",
+    "verdict star table matching prior qualitative comparison"
+  ]
+}

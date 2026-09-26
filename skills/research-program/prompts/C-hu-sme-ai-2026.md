@@ -1,0 +1,19 @@
+/research in deep:
+
+# AI Adoption in Hungarian SMEs (KKV), 2026 — Actual Usage, Daily-Workflow Replacement Potential, and Executive-Level Practice — Mixed Study
+
+⚠️ Scope: strategic landscape + directional guidance only. No implementation plans, code/schemas/API contracts, sprint plans, effort/timelines, or vendor "pick X" verdicts. Roadmap stays directional (explore → pilot → scale).
+
+📌 Context: no local baseline docs in workspace — ground every Hungarian fact in primary data (KSH, GKI Digitális Jelentések, Eurostat Digital Decade/DESI, EU SME surveys, NAV e-invoicing rules, GDPR/NVIA constraints). Frame: typical Hungarian SME (10–250 employees) in 2026 — goal is an evidence-based map of what AI is actually in use, which daily workflows are realistically replaceable with low effort, and how kkv executives personally use AI day-to-day.
+
+🔬 Primary question: In 2026, which AI solutions are Hungarian SMEs actually using and how widespread is adoption — and, at paradigm level, which daily workflows (including executive/leadership routines) can be easily substituted with AI, under what evidence?
+
+🧭 Sub-questions: A) Adoption map: Hungary-specific 2024–2026 AI usage rates for SMEs (KSH, GKI, Eurostat, analyst SME surveys), sectoral splits (retail, manufacturing, services, trades), vs. EU average; named tools in actual Hungarian use (ChatGPT, Microsoft Copilot, Gemini, Claude, Canva, chatbot/voicebot vendors, Billingo/Számlázó, HubSpot, Pipedrive, local ERP: Netbank, Sage, R3). B) Replaceable daily workflows: invoicing/accounting prep, customer support, marketing content & social, HU↔EN translation/summarization, meeting notes/minutes, email triage, quote/offer drafting, HR screening, scheduling, document search; rank by ease-of-replacement (low-hanging vs. needs integration) with evidence. C) Executive-level (cégvezetői) usage: what owners/CEOs concretely use AI for (decision prep, reporting, board/investor comms, competitor scans), self-use vs. delegated, measured time savings. D) Barriers: cost in Ft, Hungarian-language model quality gaps, GDPR/NVIA data-privacy rules, NAV compliance, skills gap, distrust; adoption-support programs (GINOP Plusz, SUFI, NKFIH, EU digitalization grants). E) Economics: typical per-seat subscription costs, ROI/time-savings studies, order-of-magnitude TCO vs. labor cost. F) Adjacent integration: ERP/billing/CRM/e-invoicing ecosystems, Microsoft 365/Google Workspace AI add-ons. G) Named 2024–2026 Hungarian SME AI successes AND failures/rollbacks/abandoned pilots; off-the-shelf vs. build trade-offs.
+
+📚 Sources: ≥15, 3–4+ independent per major claim; prefer KSH/GKI/Eurostat primary stats, vendor engineering blogs (not marketing), Hungarian business press (HVG, Portfolio, Napi.hu), arXiv 2024–2026, conference talks, analyst reports read critically for bias. Credibility scoring + triangulation mandatory.
+
+🧑‍⚖️ Personas: Skeptical Hungarian SME owner-CEO · Adversarial GDPR/NAV compliance reviewer · SME CFO (TCO in Ft) · Hungarian-language model-quality skeptic · digitalization consultant (ecosystem reality check).
+
+📄 Deliverable: 1) Executive Summary 300–400 words. 2) Findings 1500–2000 words, 80%+ prose: adoption map · workflow-replacement ranking (easy vs. hard) · executive-level usage evidence · barriers · TCO. 3) Qualitative decision matrix (ease of replacement, cost, HU-language fit, privacy risk, integration need, ROI evidence). 4) Directional guidance: which workflow clusters to explore→pilot→scale, open questions to resolve pre-implementation. 5) Open questions. 6) Full bibliography with credibility tags.
+
+🔁 Loop-back: delta-retrieve if missing — Hungary-specific adoption % from primary statistics; ≥2 named SME AI failure/rollback cases; Ft-denominated cost/ROI numbers; executive-level usage evidence (not generic white-collar claims).
