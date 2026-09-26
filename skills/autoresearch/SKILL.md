@@ -1,6 +1,6 @@
 ---
 name: autoresearch
-description: "Run a bounded, source-grounded research loop, draft a cited dossier, and optionally propose a separately reviewed canonical vault merge. Use when the user wants autonomous or deep research that may access the public web. Triggers: /autoresearch, autoresearch, research this topic, deep dive into, investigate, find everything about, research and file, go research, build a wiki on."
+description: "Run a bounded, source-grounded research loop, draft a cited dossier, and optionally propose a separately reviewed canonical vault merge. Use when the user explicitly invokes autoresearch or asks to research and file into a wiki vault. Triggers: /autoresearch, autoresearch, research and file, go research, build a wiki on. (Not for plain research questions — those route to the deep-research skill.)"
 ---
 
 # Bounded autoresearch
@@ -37,6 +37,18 @@ Confirm:
 - approved domains or source classes and any privacy constraints;
 - maximum rounds, searches, fetches, elapsed time, and drafted pages;
 - the stop condition and whether the user wants a vault filing after review.
+
+## Language
+
+<critical>
+The default output language is **English**. You MUST write the dossier, summary,
+findings, and all drafted pages in English even when the question, conversation,
+or retrieved sources are in another language. Write in another language ONLY if
+the user explicitly requests it in the research contract (e.g. "in Hungarian",
+"magyarul"). A question asked in Hungarian is NOT such a request.
+Quote sources verbatim in their original language; your prose around them stays
+English.
+</critical>
 
 Use tighter user limits when supplied. Otherwise use the program defaults: at
 most three rounds, five fetched sources per round, and fifteen drafted pages.
