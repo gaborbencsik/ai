@@ -1,0 +1,14 @@
+{
+  "name": "pi-adaptive-research",
+  "version": "1.1.0",
+  "description": "Evidence-led adaptive research skill for Pi",
+  "type": "module",
+  "keywords": ["pi-package", "pi", "research", "adaptive-research", "agent-skill"],
+  "license": "MIT",
+  "pi": {
+    "skills": ["./SKILL.md"]
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
